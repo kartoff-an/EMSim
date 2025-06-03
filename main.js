@@ -1,12 +1,11 @@
 import * as THREE from 'three';
 
-import Charge from './sim/Charge';
 import ChargeManager from './sim/ChargeManager.js';
 import { drawPointCharge } from './render/draw.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
-const renderer = new THREE.WebGLRenderer({ antialias: true});
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 
 scene.background = new THREE.Color(0x181818);
 camera.position.z = 10;
@@ -40,7 +39,7 @@ slider.addEventListener('input', () => {
     const index = activeMesh.userData.index;
     const newCharge = parseFloat(slider.value);
     chargeManager.charges[index].charge = newCharge;
-    
+
     scene.remove(activeMesh);
     const updatedMesh = drawPointCharge(chargeManager.charges[index]);
     updatedMesh.userData.index = index;
@@ -75,7 +74,7 @@ renderer.domElement.addEventListener('click', (event) => {
     mesh.userData.position = charge.position;
 
     activeMesh = mesh;
-    toggleSlider(mesh);
+    toggleSlider();
     return;
   }
   
@@ -97,8 +96,8 @@ renderer.domElement.addEventListener('click', (event) => {
 
 
 // -------- SLIDER POSITIONING -------------
-function toggleSlider(clickedMesh) {
-  const vector = new THREE.Vector3(clickedMesh.userData.position.x, clickedMesh.userData.position.y, 0);
+function toggleSlider() {
+  const vector = new THREE.Vector3(activeMesh.userData.position.x, activeMesh.userData.position.y, 0);
   vector.project(camera);
 
   const rect = renderer.domElement.getBoundingClientRect();
@@ -106,14 +105,14 @@ function toggleSlider(clickedMesh) {
   const x = (vector.x * 0.5 + 0.5) * rect.width - 72;
   const y = (-vector.y * 0.5 + 0.5) * rect.height - 50;
 
-  updateSliderThumbColor();
-  slider.value = clickedMesh.userData.charge;
+  slider.value = activeMesh.userData.charge;
   slider.style.position = "absolute";
   slider.style.left = `${x - slider.offsetWidth * 0.5}px`;
   slider.style.top = `${y - slider.offsetHeight * 0.5}px`;
 
   isSliderVisible = !isSliderVisible;
   slider.style.display = isSliderVisible ? 'block' : 'none';
+  updateSliderThumbColor();
 }
 
 function animate() {
