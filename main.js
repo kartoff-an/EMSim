@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
-import ChargeManager from './sim/ChargeManager.js';
-import { drawPointCharge } from './render/draw.js';
+import Draw from './render/draw.js';
+import ChargeConfig from './sim/ChargeConfig.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -15,7 +15,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio * 10,   2));
 const simField = document.querySelector( ".sim-field" );
 simField.appendChild( renderer.domElement );
 
-const chargeManager = new ChargeManager();
+const chargeConfig = new ChargeConfig();
 const chargeMeshes = [];
 
 const raycaster = new THREE.Raycaster();
@@ -25,6 +25,7 @@ const slider = document.querySelector('.slider');
 slider.style.display = 'none';
 let isSliderVisible = false;
 let activeMesh = null;
+let activeMeshIndex = -1;
 
 // ----------- SLIDER BEHAVIOUR -----------
 function updateSliderThumbColor() {
@@ -36,16 +37,22 @@ function updateSliderThumbColor() {
 slider.addEventListener('input', () => {
   updateSliderThumbColor();
   if (activeMesh != null) {
-    const index = activeMesh.userData.index;
+
     const newCharge = parseFloat(slider.value);
-    chargeManager.charges[index].charge = newCharge;
+    chargeConfig.charges[activeMeshIndex].charge = newCharge;
 
     scene.remove(activeMesh);
-    const updatedMesh = drawPointCharge(chargeManager.charges[index]);
-    updatedMesh.userData.index = index;
-    chargeMeshes[index] = updatedMesh;
+    const updatedMesh = Draw.pointCharge(chargeConfig.charges[activeMeshIndex]);
+    updatedMesh.userData.index = activeMeshIndex;
+    chargeMeshes[activeMeshIndex] = updatedMesh;
     activeMesh = updatedMesh;
     scene.add(updatedMesh);
+
+    const charges = chargeConfig.charges;
+    for (let i = 0; i < charges.length; i++) {
+      charges.EFI = chargeConfig.getElectricFieldAt(2, 2);
+      console.log(charges);
+    }
   }
 });
 
@@ -68,12 +75,13 @@ renderer.domElement.addEventListener('click', (event) => {
     if (!mesh) return;
 
     const index = chargeMeshes.indexOf(mesh);
-    const charge = chargeManager.charges[index];
+    const charge = chargeConfig.charges[index];
     mesh.userData.index = index;
     mesh.userData.charge = charge.charge;
     mesh.userData.position = charge.position;
-
+  
     activeMesh = mesh;
+    activeMeshIndex = index;
     toggleSlider();
     return;
   }
@@ -83,9 +91,9 @@ renderer.domElement.addEventListener('click', (event) => {
     const point = new THREE.Vector3();
     raycaster.ray.intersectPlane(planeZ, point);
     
-    const newCharge = chargeManager.addCharge(point.x, point.y, 0);
-    const chargeMesh = drawPointCharge(newCharge);
-    chargeMesh.userData.index = chargeManager.charges.length - 1;
+    const newCharge = chargeConfig.addCharge(point.x, point.y, 0);
+    const chargeMesh = Draw.pointCharge(newCharge);
+    chargeMesh.userData.index = chargeConfig.charges.length - 1;
     chargeMeshes.push(chargeMesh);
     scene.add(chargeMesh);
   }
@@ -114,6 +122,8 @@ function toggleSlider() {
   slider.style.display = isSliderVisible ? 'block' : 'none';
   updateSliderThumbColor();
 }
+
+scene.add(Draw.grid(camera, 10));
 
 function animate() {
   renderer.render( scene, camera );

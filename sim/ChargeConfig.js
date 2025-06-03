@@ -1,6 +1,7 @@
+import * as THREE from 'three';
 import  Charge from './Charge.js';
 
-class ChargeManager {
+class ChargeConfig {
     constructor() {
         this.charges = [];
     }
@@ -25,4 +26,4 @@ class ChargeManager {
     }
 }
 
-export default ChargeManager;
+export default ChargeConfig;

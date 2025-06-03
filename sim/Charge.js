@@ -7,14 +7,15 @@ class Charge {
     }
 
     electricFieldAt(x, y) {
-        const k = 8.988e9;
+        const k = 8.987551786214e9; // Coulomb constant
+        const q = this.charge * 1.602176634e-19;
         const dx = x - this.position.x;
         const dy = y - this.position.y;
-        const RSquared = dx * dx + dy * dy;
-        const R = Math.sqrt( RSquared );
-        const E = k * this.charge / RSquared;
-        
-        return new THREE.Vector2( E * ( dx / R ), E * ( dy / R ) );
+        const rSquared = dx * dx + dy * dy;
+        const r = Math.sqrt(rSquared);
+        const E = k * (q / rSquared);
+
+        return new THREE.Vector2(E * (dx / r), E * (dy / r));
     }
 }
 
