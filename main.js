@@ -17,7 +17,7 @@ const simField = document.querySelector( ".sim-field" );
 simField.appendChild( renderer.domElement );
 
 const chargeManager = new ChargeManager();
-const clickableMeshes = [];
+const chargeMeshes = [];
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -40,7 +40,13 @@ slider.addEventListener('input', () => {
     const index = activeMesh.userData.index;
     const newCharge = parseFloat(slider.value);
     chargeManager.charges[index].charge = newCharge;
-    activeMesh.userData.charge = newCharge;
+    
+    scene.remove(activeMesh);
+    const updatedMesh = drawPointCharge(chargeManager.charges[index]);
+    updatedMesh.userData.index = index;
+    chargeMeshes[index] = updatedMesh;
+    activeMesh = updatedMesh;
+    scene.add(updatedMesh);
   }
 });
 
@@ -52,18 +58,17 @@ renderer.domElement.addEventListener('click', (event) => {
 
   raycaster.setFromCamera(mouse, camera);
 
-  // Handles when the charge is clicked
-  const intersects = raycaster.intersectObjects(clickableMeshes,);
+  const intersects = raycaster.intersectObjects(chargeMeshes,);
   if (intersects.length > 0) {
     let mesh = intersects[0].object;
 
-    while (mesh && !clickableMeshes.includes(mesh)) {
+    while (mesh && !chargeMeshes.includes(mesh)) {
       mesh = mesh.parent;
     }
 
     if (!mesh) return;
 
-    const index = clickableMeshes.indexOf(mesh);
+    const index = chargeMeshes.indexOf(mesh);
     const charge = chargeManager.charges[index];
     mesh.userData.index = index;
     mesh.userData.charge = charge.charge;
@@ -82,9 +87,8 @@ renderer.domElement.addEventListener('click', (event) => {
     const newCharge = chargeManager.addCharge(point.x, point.y, 0);
     const chargeMesh = drawPointCharge(newCharge);
     chargeMesh.userData.index = chargeManager.charges.length - 1;
-
+    chargeMeshes.push(chargeMesh);
     scene.add(chargeMesh);
-    clickableMeshes.push(chargeMesh);
   }
   slider.style.display = 'none';
   isSliderVisible = false;
