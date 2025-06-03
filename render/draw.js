@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import FieldLines from '../sim/FieldLines.js';
 
 const Draw = {
     pointCharge: (ch) => {
@@ -83,7 +84,43 @@ const Draw = {
         gridHelper.position.z = 0;
 
         return gridHelper;
+    },
+
+    drawFields: (chargeConfig, N = 500) => {
+        const fieldGroup = new THREE.Group(); 
+
+        const numLinesPerCharge = 12;
+        const radius = 0.1;
+
+        for (const charge of chargeConfig.charges) {
+            const { x, y } = charge.position;
+
+            for (let i = 0; i < numLinesPerCharge; i++) {
+                const angle = (i / numLinesPerCharge) * 2 * Math.PI;
+                const x0 = x + radius * Math.cos(angle);
+                const y0 = y + radius * Math.sin(angle);
+
+                const fieldLine = new FieldLines(chargeConfig);
+
+                const forwardTrace = fieldLine.generateTracePoints(x0, y0, N, 1);
+                const backwardTrace = fieldLine.generateTracePoints(x0, y0, N, -1);
+                const fullTrace = backwardTrace.reverse().concat([new THREE.Vector2(x0, y0)], forwardTrace);
+
+                if (fullTrace.length < 2) continue;
+
+                const curve = new THREE.CatmullRomCurve3(fullTrace.map(p => new THREE.Vector3(p.x, p.y, 0)));
+                const points = curve.getPoints(100);
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+                const splineObject = new THREE.Line(geometry, material);
+
+                fieldGroup.add(splineObject);
+            }
+        }
+
+        return fieldGroup;
     }
-};
+}
+
 
 export default Draw;
