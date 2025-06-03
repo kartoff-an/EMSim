@@ -19,15 +19,31 @@ simField.appendChild( renderer.domElement );
 const chargeManager = new ChargeManager();
 const clickableMeshes = [];
 
-
-
-// Raycaster for mouse click detection
-const slider = document.querySelector('.slider');
-slider.style.display = 'none';
-let toggle = false;
-
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
+
+const slider = document.querySelector('.slider');
+slider.style.display = 'none';
+let isSliderVisible = false;
+let activeMesh = null;
+
+// ----------- SLIDER BEHAVIOUR -----------
+function updateSliderThumbColor() {
+  const val = parseFloat(slider.value);
+  let color = val > 0 ? '#ff3366' : (val < 0 ? '#3366ff' : '#888');
+  slider.style.setProperty('--thumb-color', color);
+}
+
+slider.addEventListener('input', () => {
+  updateSliderThumbColor();
+  if (activeMesh != null) {
+    const index = activeMesh.userData.index;
+    const newCharge = parseFloat(slider.value);
+    chargeManager.charges[index].charge = newCharge;
+    activeMesh.userData.charge = newCharge;
+  }
+});
+
 
 renderer.domElement.addEventListener('click', (event) => {
   const rect = renderer.domElement.getBoundingClientRect();
@@ -53,42 +69,31 @@ renderer.domElement.addEventListener('click', (event) => {
     mesh.userData.charge = charge.charge;
     mesh.userData.position = charge.position;
 
-    showSlider(mesh);
+    activeMesh = mesh;
+    toggleSlider(mesh);
     return;
   }
   
-  // Add charge when no existing charge at this point
-  const planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-  const point = new THREE.Vector3();
-  raycaster.ray.intersectPlane(planeZ, point);
-  
-  const charge = 5;
-  const newCharge = chargeManager.addCharge(point.x, point.y, charge);
+  if (!activeMesh) {
+    const planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const point = new THREE.Vector3();
+    raycaster.ray.intersectPlane(planeZ, point);
+    
+    const newCharge = chargeManager.addCharge(point.x, point.y, 0);
+    const chargeMesh = drawPointCharge(newCharge);
+    chargeMesh.userData.index = chargeManager.charges.length - 1;
 
-  const chargeMesh = drawPointCharge(newCharge);
-  chargeMesh.userData.index = chargeManager.charges.length - 1;
-  scene.add(chargeMesh);
-  clickableMeshes.push(chargeMesh);
+    scene.add(chargeMesh);
+    clickableMeshes.push(chargeMesh);
+  }
   slider.style.display = 'none';
+  isSliderVisible = false;
+  activeMesh = null;
 });
 
-function dynamicSliderThumbColor() {
-  const val = parseFloat(slider.value);
-  let color = '#888';
 
-  if (val > 0) {
-    color = '#ff3366';
-  } 
-  else if (val < 0) {
-    color = '#3366ff'; 
-  }
-
-  slider.style.setProperty('--thumb-color', color);
-}
-
-
-// Show slider
-function showSlider(clickedMesh) {
+// -------- SLIDER POSITIONING -------------
+function toggleSlider(clickedMesh) {
   const vector = new THREE.Vector3(clickedMesh.userData.position.x, clickedMesh.userData.position.y, 0);
   vector.project(camera);
 
@@ -97,21 +102,15 @@ function showSlider(clickedMesh) {
   const x = (vector.x * 0.5 + 0.5) * rect.width - 72;
   const y = (-vector.y * 0.5 + 0.5) * rect.height - 50;
 
-  dynamicSliderThumbColor();
+  updateSliderThumbColor();
   slider.value = clickedMesh.userData.charge;
   slider.style.position = "absolute";
   slider.style.left = `${x - slider.offsetWidth * 0.5}px`;
   slider.style.top = `${y - slider.offsetHeight * 0.5}px`;
-  slider.style.display = toggle ? 'none' : 'block';
-  toggle = !toggle;
 
-  slider.addEventListener('change', () => {
-    console.log(clickedMesh.userData.index);
-    console.log(clickableMeshes);
-  })
+  isSliderVisible = !isSliderVisible;
+  slider.style.display = isSliderVisible ? 'block' : 'none';
 }
-
-slider.addEventListener('input', dynamicSliderThumbColor);
 
 function animate() {
   renderer.render( scene, camera );
