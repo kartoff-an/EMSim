@@ -2,7 +2,7 @@ import  Charge from './Charge.js';
 
 class ChargeManager {
     constructor() {
-        this.charges = [new Charge(0,0,2)];
+        this.charges = [];
     }
 
     addCharge( x, y, charge ) {
