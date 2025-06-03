@@ -31,14 +31,33 @@ class FieldLines {
         let y = y0;
         const h = 0.01 * direction;
 
+        const epsilon = 0.05;
+
         for (let i = 0; i < N; i++) {
             const next = RK4(x, y, h, this.chargeConfig);
 
             if (!isFinite(next.x) || !isFinite(next.y)) break;
 
-            trace.push(new THREE.Vector3(next.x, next.y, 0));
+            const point = new THREE.Vector3(next.x, next.y, 0);
+            trace.push(point);
+
             x = next.x;
             y = next.y;
+
+            for (const charge of this.chargeConfig.charges) {
+                const cx = charge.position.x;
+                const cy = charge.position.y;
+
+                const dx0 = cx - x0;
+                const dy0 = cy - y0;
+                if (dx0 * dx0 + dy0 * dy0 < 1e-6) continue;
+
+                const dx = cx - x;
+                const dy = cy - y;
+                if (dx * dx + dy * dy < epsilon * epsilon) {
+                    return trace; 
+                }
+            }
         }
 
         return trace;

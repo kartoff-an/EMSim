@@ -7,36 +7,30 @@ const Draw = {
         const radius = 0.2;
         const ringThickness = 0.025;
 
-        // Colors for charge types
         const RED = 0xff3366;
-    ;
         const DARK_RED = 0xAF0C15;
         const BLUE = 0x1761B0;
         const DARK_BLUE = 0x0D3580;
         const GREY = 0x282828;
         let edgeColor, circColor;
 
-        if ( ch.charge > 0 ) {
+        if (ch.charge > 0) {
             circColor = RED;
             edgeColor = DARK_RED;
-        }
-        else if ( ch.charge < 0 ) {
+        } else if (ch.charge < 0) {
             circColor = BLUE;
             edgeColor = DARK_BLUE;
-        }
-        else {
+        } else {
             circColor = GREY;
             edgeColor = GREY;
         }
 
-        // Create the filled circle representing the charge
         const geometry = new THREE.CircleGeometry(radius, 64);
-        const material = new THREE.MeshBasicMaterial( { color : circColor } );
-        const circle = new THREE.Mesh( geometry, material );
+        const material = new THREE.MeshBasicMaterial({ color: circColor });
+        const circle = new THREE.Mesh(geometry, material);
         circle.position.z = 0;
         group.add(circle);
 
-        // Create the ring outline
         const ringGeometry = new THREE.RingGeometry(radius, radius + ringThickness, 64);
         const ringMaterial = new THREE.MeshBasicMaterial({
             color: edgeColor,
@@ -46,7 +40,6 @@ const Draw = {
         ring.position.z = 0;    
         group.add(ring);
 
-        // TEXT as sprite
         const chargeLabel = ch.charge > 0 ? '+' + ch.charge : ch.charge;
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -88,13 +81,68 @@ const Draw = {
     },
 
     drawFields: (chargeConfig, N = 500) => {
-        const fieldGroup = new THREE.Group(); 
+        const fieldGroup = new THREE.Group();
 
         const numLinesPerCharge = 8;
         const radius = 0.1;
+        const whiteMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+
+        const positions = [];
+        const epsilon = 0.05;
+
+        function isNearCharge(point, sourcePos) {
+            for (const charge of chargeConfig.charges) {
+                const cx = charge.position.x;
+                const cy = charge.position.y;
+
+                // Skip source charge
+                const dx0 = cx - sourcePos.x;
+                const dy0 = cy - sourcePos.y;
+                if (dx0 * dx0 + dy0 * dy0 < 1e-6) continue;
+
+                const dx = cx - point.x;
+                const dy = cy - point.y;
+                if (dx * dx + dy * dy < epsilon * epsilon) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function extendTrace(trace, direction, sourcePos, maxExtendSteps = 200) {
+            if (trace.length === 0) return trace;
+
+            let extendedTrace = trace.slice();
+            let lastPoint = extendedTrace[extendedTrace.length - 1];
+
+            let stepsLeft = maxExtendSteps;
+            const fieldLine = new FieldLines(chargeConfig);
+
+            while (!isNearCharge(lastPoint, sourcePos) && stepsLeft > 0) {
+                const newPoints = fieldLine.generateTracePoints(lastPoint.x, lastPoint.y, 50, direction);
+                if (newPoints.length === 0) break;
+
+                // Convert to THREE.Vector3 if needed
+                let pts = newPoints;
+                if (!(pts[0] instanceof THREE.Vector3)) {
+                    pts = newPoints.map(p => new THREE.Vector3(p.x, p.y, 0));
+                }
+
+                if (pts[0].distanceTo(lastPoint) < 1e-8) {
+                    pts.shift();
+                }
+                if (pts.length === 0) break;
+
+                extendedTrace = extendedTrace.concat(pts);
+                lastPoint = extendedTrace[extendedTrace.length - 1];
+                stepsLeft -= 50;
+            }
+
+            return extendedTrace;
+        }
 
         for (const charge of chargeConfig.charges) {
-            if (charge.charge == 0) continue;
+            if (charge.charge === 0) continue;
             const { x, y } = charge.position;
 
             for (let i = 0; i < numLinesPerCharge; i++) {
@@ -104,27 +152,51 @@ const Draw = {
 
                 const fieldLine = new FieldLines(chargeConfig);
 
-                const forwardTrace = fieldLine.generateTracePoints(x0, y0, N, 1);
-                const backwardTrace = fieldLine.generateTracePoints(x0, y0, N, -1);
-                const fullTrace = backwardTrace.reverse().concat([new THREE.Vector2(x0, y0)], forwardTrace);
+                let forward = fieldLine.generateTracePoints(x0, y0, N, 1);
+                let backward = fieldLine.generateTracePoints(x0, y0, N, -1);
+
+                // Convert to Vector3 if necessary
+                if (forward.length && !(forward[0] instanceof THREE.Vector3)) {
+                    forward = forward.map(p => new THREE.Vector3(p.x, p.y, 0));
+                }
+                if (backward.length && !(backward[0] instanceof THREE.Vector3)) {
+                    backward = backward.map(p => new THREE.Vector3(p.x, p.y, 0));
+                }
+
+                forward = extendTrace(forward, 1, { x: x0, y: y0 });
+                backward = extendTrace(backward, -1, { x: x0, y: y0 });
+
+                if (forward.length + backward.length < 2) continue;
+
+                const fullTrace = [];
+
+                for (let j = backward.length - 1; j >= 0; j--) {
+                    fullTrace.push(backward[j]);
+                }
+
+                fullTrace.push(new THREE.Vector3(x0, y0, 0));
+                fullTrace.push(...forward);
 
                 if (fullTrace.length < 2) continue;
 
-                const curve = new THREE.CatmullRomCurve3(fullTrace.map(p => new THREE.Vector3(p.x, p.y, 0)));
-                const points = curve.getPoints(100);
-                const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                const material = new THREE.LineBasicMaterial({ color: 0xffffff });
-                const splineObject = new THREE.Line(geometry, material);
-
-                fieldGroup.add(splineObject);
+                for (const p of fullTrace) {
+                    positions.push(p.x, p.y, 0);
+                }
+                positions.push(NaN, NaN, NaN); // separate line segments
             }
         }
 
-        //fieldGroup.position.z = 5;
+        const positionAttr = new Float32Array(positions);
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positionAttr, 3));
+
+        // Use LineSegments to support NaN breaks
+        const lineSegments = new THREE.LineSegments(geometry, whiteMaterial);
+        fieldGroup.add(lineSegments);
+
         fieldGroup.renderOrder = 0;
         return fieldGroup;
     }
-}
-
+};
 
 export default Draw;

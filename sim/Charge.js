@@ -8,7 +8,7 @@ class Charge {
 
     electricFieldAt(x, y) {
         const k = 8.987551786214e9; // Coulomb constant
-        const q = this.charge * 1.602176634e-19;
+        const q = this.charge;
         const dx = x - this.position.x;
         const dy = y - this.position.y;
         const rSquared = dx * dx + dy * dy;
