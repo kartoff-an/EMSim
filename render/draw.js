@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import FieldLines from '../sim/FieldLines.js';
 
+
 const Draw = {
     pointCharge: (ch) => {
         const group = new THREE.Group(); 
@@ -83,19 +84,18 @@ const Draw = {
     drawFields: (chargeConfig, N = 500) => {
         const fieldGroup = new THREE.Group();
 
-        const numLinesPerCharge = 8;
+        const numLinesPerCharge = 12;
         const radius = 0.1;
-        const whiteMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
 
         const positions = [];
         const epsilon = 0.05;
+        let maxIntensity = 1;
 
         function isNearCharge(point, sourcePos) {
             for (const charge of chargeConfig.charges) {
                 const cx = charge.position.x;
                 const cy = charge.position.y;
 
-                // Skip source charge
                 const dx0 = cx - sourcePos.x;
                 const dy0 = cy - sourcePos.y;
                 if (dx0 * dx0 + dy0 * dy0 < 1e-6) continue;
@@ -122,7 +122,6 @@ const Draw = {
                 const newPoints = fieldLine.generateTracePoints(lastPoint.x, lastPoint.y, 50, direction);
                 if (newPoints.length === 0) break;
 
-                // Convert to THREE.Vector3 if needed
                 let pts = newPoints;
                 if (!(pts[0] instanceof THREE.Vector3)) {
                     pts = newPoints.map(p => new THREE.Vector3(p.x, p.y, 0));
@@ -155,7 +154,6 @@ const Draw = {
                 let forward = fieldLine.generateTracePoints(x0, y0, N, 1);
                 let backward = fieldLine.generateTracePoints(x0, y0, N, -1);
 
-                // Convert to Vector3 if necessary
                 if (forward.length && !(forward[0] instanceof THREE.Vector3)) {
                     forward = forward.map(p => new THREE.Vector3(p.x, p.y, 0));
                 }
@@ -182,16 +180,56 @@ const Draw = {
                 for (const p of fullTrace) {
                     positions.push(p.x, p.y, 0);
                 }
-                positions.push(NaN, NaN, NaN); // separate line segments
+                positions.push(NaN, NaN, NaN);
+
+                const arrowCount = Math.min(4, Math.floor(fullTrace.length / 10));
+                for (let k = 1; k <= arrowCount; k++) {
+                    const index = Math.floor((k * fullTrace.length) / (arrowCount + 1));
+
+                    if (index < fullTrace.length - 1) {
+                        const p1 = fullTrace[index];
+                        const p2 = fullTrace[index + 1];
+
+                        const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+                        const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
+
+                        const E = chargeConfig.getElectricFieldAt(mid.x, mid.y);
+                        const mag = E.length();
+                        const color = intensityToColor(mag, maxIntensity);
+                        const opacity = Math.min(1.0, mag / 1e9); // tweak fading
+
+                        const arrow = createArrow(mid, dir, color, opacity);
+                        fieldGroup.add(arrow);
+                    }
+                }
             }
         }
-
+        
         const positionAttr = new Float32Array(positions);
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(positionAttr, 3));
 
-        // Use LineSegments to support NaN breaks
-        const lineSegments = new THREE.LineSegments(geometry, whiteMaterial);
+
+        const colors = [];
+
+        for (let i = 0; i < positions.length; i += 3) {
+            const x = positions[i];
+            const y = positions[i + 1];
+            if (isNaN(x) || isNaN(y)) {
+                colors.push(0, 0, 0);
+                continue;
+            }
+            const mag = chargeConfig.getElectricFieldAt(x, y).length();
+            //console.log(mag);
+            const color = intensityToColor(mag, maxIntensity);
+            colors.push(...color);
+        }
+
+
+
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        const lineMaterial = new THREE.LineBasicMaterial({ vertexColors: true });
+        const lineSegments = new THREE.Line(geometry, lineMaterial);
         fieldGroup.add(lineSegments);
 
         fieldGroup.renderOrder = 0;
@@ -200,3 +238,51 @@ const Draw = {
 };
 
 export default Draw;
+
+function intensityToColor(intensity, maxIntensity) {
+    intensity = intensity / 500e8;
+    const t = Math.min(intensity / maxIntensity, 1);
+
+    let r, g, b;
+
+    if (t < 0.33) {
+        // Green → Yellow
+        const localT = t / 0.33;
+        r = (1 - localT) * 46 + localT * 241;
+        g = (1 - localT) * 204 + localT * 196;
+        b = (1 - localT) * 113 + localT * 15;
+    } else if (t < 0.66) {
+        // Yellow → Orange
+        const localT = (t - 0.33) / 0.33;
+        r = (1 - localT) * 241 + localT * 230;
+        g = (1 - localT) * 196 + localT * 126;
+        b = (1 - localT) * 15 + localT * 34;
+    } else {
+        // Orange → Red
+        const localT = (t - 0.66) / 0.34;
+        r = (1 - localT) * 230 + localT * 231;
+        g = (1 - localT) * 126 + localT * 76;
+        b = (1 - localT) * 34 + localT * 60;
+    }
+
+    return [r / 255, g / 255, b / 255];
+}
+
+
+
+function createArrow(position, direction, color, opacity = 1, size = 0.06) {
+    const coneGeom = new THREE.ConeGeometry(size * 0.5, size, 6);
+    const material = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(...color),
+        transparent: true,
+        opacity: opacity,
+        depthWrite: false
+    });
+
+    const cone = new THREE.Mesh(coneGeom, material);
+    const axis = new THREE.Vector3(0, 1, 0); // cone points up
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, direction.clone().normalize());
+    cone.quaternion.copy(quaternion);
+    cone.position.copy(position.clone().add(direction.clone().normalize().multiplyScalar(size * 0.5)));
+    return cone;
+}

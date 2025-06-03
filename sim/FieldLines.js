@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-function RK4(x0, y0, h, chargeConfig) {
+function RK4(x0, y0, h, chargeConfig) { // Runge-Kutta Method
     const f = (x, y) => {
         const E = chargeConfig.getElectricFieldAt(x, y);
         if (E.lengthSq() === 0) return new THREE.Vector2(0, 0);
