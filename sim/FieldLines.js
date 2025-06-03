@@ -36,7 +36,7 @@ class FieldLines {
 
             if (!isFinite(next.x) || !isFinite(next.y)) break;
 
-            trace.push(new THREE.Vector2(next.x, next.y));
+            trace.push(new THREE.Vector3(next.x, next.y, 0));
             x = next.x;
             y = next.y;
         }

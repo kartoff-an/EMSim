@@ -67,6 +67,7 @@ const Draw = {
         group.add(sprite);
 
         group.position.set(ch.position.x, ch.position.y, 0);
+        group.renderOrder = 1;
         
         return group;
     },
@@ -89,10 +90,11 @@ const Draw = {
     drawFields: (chargeConfig, N = 500) => {
         const fieldGroup = new THREE.Group(); 
 
-        const numLinesPerCharge = 12;
+        const numLinesPerCharge = 8;
         const radius = 0.1;
 
         for (const charge of chargeConfig.charges) {
+            if (charge.charge == 0) continue;
             const { x, y } = charge.position;
 
             for (let i = 0; i < numLinesPerCharge; i++) {
@@ -118,6 +120,8 @@ const Draw = {
             }
         }
 
+        //fieldGroup.position.z = 5;
+        fieldGroup.renderOrder = 0;
         return fieldGroup;
     }
 }

@@ -78,7 +78,7 @@ class SliderController {
         }
         this.fieldLines = [];
 
-        const N = 1000;
+        const N = 5000;
         for (let i = 0; i < 5; i++) {
             const fieldLine = Draw.drawFields(this.chargesConfig, N);
             if (fieldLine) {
