@@ -1,6 +1,21 @@
 import * as THREE from 'three';
 import FieldLines from '../sim/FieldLines.js';
 
+// Place this outside the Draw object to reuse across all charges
+const glowTexture = (() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    const gradient = ctx.createRadialGradient(128, 128, 10, 128, 128, 128);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 256, 256);
+
+    return new THREE.CanvasTexture(canvas);
+})();
 
 const Draw = {
     pointCharge: (ch) => {
@@ -59,6 +74,25 @@ const Draw = {
         sprite.scale.set(0.3, 0.3, 1);
 
         group.add(sprite);
+
+        /** if (Math.abs(ch.charge) > 0) {
+            const glowMaterial = new THREE.SpriteMaterial({
+                map: glowTexture,
+                color: new THREE.Color(circColor),
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                depthWrite: false
+            });
+
+            const glowSprite = new THREE.Sprite(glowMaterial);
+            const size = 1 + Math.abs(ch.charge / 10);
+            glowSprite.scale.set(size, size, 1);
+            glowSprite.position.z = -0.01;
+            glowSprite.renderOrder = 0;
+
+            group.add(glowSprite);
+        }**/
+
 
         group.position.set(ch.position.x, ch.position.y, 0);
         group.renderOrder = 1;
@@ -182,11 +216,20 @@ const Draw = {
                 }
                 positions.push(NaN, NaN, NaN);
 
-                const arrowCount = Math.min(4, Math.floor(fullTrace.length / 10));
-                for (let k = 1; k <= arrowCount; k++) {
-                    const index = Math.floor((k * fullTrace.length) / (arrowCount + 1));
+                const arrowCount = Math.min(4, Math.floor(fullTrace.length / 100));
+                if (arrowCount > 0) {
+                    const coneGeom = new THREE.ConeGeometry(0.04, 0.08, 6);
+                    const arrowMaterial = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false });
 
-                    if (index < fullTrace.length - 1) {
+                    // Create InstancedMesh for arrows
+                    const instancedArrows = new THREE.InstancedMesh(coneGeom, arrowMaterial, arrowCount);
+                    const dummy = new THREE.Object3D();
+                    const colorsArray = new Float32Array(arrowCount * 3);
+
+                    for (let k = 1; k <= arrowCount; k++) {
+                        const index = Math.floor((k * fullTrace.length) / (arrowCount + 1));
+                        if (index >= fullTrace.length - 1) continue;
+
                         const p1 = fullTrace[index];
                         const p2 = fullTrace[index + 1];
 
@@ -195,13 +238,27 @@ const Draw = {
 
                         const E = chargeConfig.getElectricFieldAt(mid.x, mid.y);
                         const mag = E.length();
-                        const color = intensityToColor(mag, maxIntensity);
-                        const opacity = Math.min(1.0, mag / 1e9); // tweak fading
+                        const colorArr = intensityToColor(mag, maxIntensity);
 
-                        const arrow = createArrow(mid, dir, color, opacity);
-                        fieldGroup.add(arrow);
+                        // Store color for each instance
+                        colorsArray.set(colorArr, (k - 1) * 3);
+
+                        dummy.position.copy(mid);
+                        const axis = new THREE.Vector3(0, 1, 0);
+                        const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, dir);
+                        dummy.quaternion.copy(quaternion);
+                        dummy.updateMatrix();
+
+                        instancedArrows.setMatrixAt(k - 1, dummy.matrix);
                     }
+
+                    // Attach color attribute
+                    instancedArrows.instanceColor = new THREE.InstancedBufferAttribute(colorsArray, 3);
+
+                    instancedArrows.instanceMatrix.needsUpdate = true;
+                    fieldGroup.add(instancedArrows);
                 }
+
             }
         }
         
@@ -266,23 +323,4 @@ function intensityToColor(intensity, maxIntensity) {
     }
 
     return [r / 255, g / 255, b / 255];
-}
-
-
-
-function createArrow(position, direction, color, opacity = 1, size = 0.06) {
-    const coneGeom = new THREE.ConeGeometry(size * 0.5, size, 6);
-    const material = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(...color),
-        transparent: true,
-        opacity: opacity,
-        depthWrite: false
-    });
-
-    const cone = new THREE.Mesh(coneGeom, material);
-    const axis = new THREE.Vector3(0, 1, 0); // cone points up
-    const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, direction.clone().normalize());
-    cone.quaternion.copy(quaternion);
-    cone.position.copy(position.clone().add(direction.clone().normalize().multiplyScalar(size * 0.5)));
-    return cone;
 }
