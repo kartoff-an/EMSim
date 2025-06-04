@@ -1,39 +1,33 @@
 # ⚡ Electric Field Simulation
 
-Welcome to the Electric Field Simulator! This is a web-based interactive simulation built with **Three.js** that visualizes electric fields, charge interactions, and field lines in real-time. It's designed to be visually smooth, educational, and optimized for performance — even with many elements on screen.
-
+This is a web-based interactive simulation built with **Three.js** that visualizes electric fields due to point charges, charge interactions, and field lines in real-time. It's designed to be visually smooth, and educational.
 ## Features
 
 * **Point Charge Visualization**
-  Charges are rendered as colored glows (red for positive, blue for negative) with smooth falloff.
+  Charges can be rendered as colored glows (red for positive, blue for negative) with smooth falloff.
 
 *  **Dynamic Electric Field Lines**
-  Real-time field line tracing using numerical integration (e.g., RK4 or Euler) based on the current configuration of charges.
+  Real-time field line tracing using Runge-Kutta method based on the current configuration of charges.
 
 *  **Live Field Vectors**
-  Small arrows show the direction and relative magnitude of the electric field at grid points.
+  Small arrows show the direction of the electric field at grid points.
 
 *  **Charge Interaction**
   Drag-and-drop UI to add, move, or remove charges. Charges update the field in real-time.
 
-*  **Performance Optimized Rendering**
-  Uses GPU-accelerated shaders where possible. Minimizes expensive CPU calculations, batches geometry, and limits DOM overhead.
-
 ##  Tech Stack
 
 * **Three.js** – Core 3D rendering and scene management.
-* **GLSL Shaders** – Custom glow effects and maybe even some GPU-side field calculations.
 * **JavaScript (ES6)** – Logic, controls, and UI interactions.
 * **HTML/CSS** – Basic layout and style.
 
 ##  Physics Behind the Scenes
 
 * Coulomb's Law:
-  $\vec{E} = \frac{1}{4\pi\varepsilon_0} \sum_i \frac{q_i(\vec{r} - \vec{r}_i)}{|\vec{r} - \vec{r}_i|^3}$
+  $\displaystyle \mathbf{E} = \frac{1}{4\pi\varepsilon_0} \sum_i \frac{q_i(\mathbf{r} - \mathbf{r}_i)}{|\mathbf{r} - \mathbf{r}_i|^3}$
 
-* Field lines follow $\vec{E}$, traced via stepwise integration.
-
-* No microcontrollers or external physics engines — all logic is in-browser and hand-coded for clarity and speed.
+* Field lines follow $\vec{E}$, traced via Runge-Kutta calculation of the differential equation
+  \[\frac{dy}{dx} = \frac{E_y}{E_x}\]
 
 ##  Future Plans
 
@@ -47,9 +41,9 @@ Welcome to the Electric Field Simulator! This is a web-based interactive simulat
 > Just clone and open `index.html` in a modern browser. No build steps needed (yet).
 
 ```bash
-git clone https://github.com/your-username/electric-field-sim
-cd electric-field-sim
-# Open in browser or serve via localhost
+git clone https://github.com/kartoff-an/EMSim
+cd EMSim
+npx vite
 ```
 
 ## 📚 License
