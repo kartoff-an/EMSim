@@ -11,8 +11,8 @@ function RK4(x0, y0, h, chargeConfig) {
     const k3 = f(x0 + k2.x / 2, y0 + k2.y / 2).multiplyScalar(h);
     const k4 = f(x0 + k3.x, y0 + k3.y).multiplyScalar(h);
 
-    const dx = (k1.x + 2 * k2.x + 2 * k3.x + k4.x) / 6;
-    const dy = (k1.y + 2 * k2.y + 2 * k3.y + k4.y) / 6;
+    const dx = ((k1.x + 2 * k2.x + 2 * k3.x + k4.x) / 6);
+    const dy = ((k1.y + 2 * k2.y + 2 * k3.y + k4.y) / 6);
 
     return { x: x0 + dx, y: y0 + dy };
 }

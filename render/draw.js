@@ -117,7 +117,7 @@ const Draw = {
         geometry.setAttribute('position', new THREE.BufferAttribute(positionAttr, 3));
         geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
         const lineMaterial = new THREE.LineBasicMaterial({ vertexColors: true });
-        const lineSegments = new THREE.LineSegments(geometry, lineMaterial);
+        const lineSegments = new THREE.Line(geometry, lineMaterial);
         fieldGroup.add(lineSegments);
 
         fieldGroup.renderOrder = 0;
@@ -131,22 +131,8 @@ export default Draw;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function intensityToColor(intensity, maxIntensity) {
-    intensity = intensity / 500e8;
+    intensity = (intensity / 500e8).toFixed(2);
     const t = Math.min(intensity / maxIntensity, 1);
 
     let r, g, b;
@@ -194,7 +180,7 @@ function getColorMapping(positions, chargeConfig) {
 }
 
 function createArrows(trace, chargeConfig) {
-    const arrowCount = Math.min(6, Math.floor(trace.length / 200));
+    const arrowCount = Math.min(6, Math.floor(trace.length / 500));
     const maxIntensity = 1;
 
     const coneGeom = new THREE.ConeGeometry(0.04, 0.08, 6);
@@ -215,7 +201,7 @@ function createArrows(trace, chargeConfig) {
         const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
 
         const E = chargeConfig.getElectricFieldAt(mid.x, mid.y);
-        const mag = E.length();
+        const mag = E.length().toFixed(2);
         const colorArr = intensityToColor(mag, maxIntensity);
 
         colorsArray.set(colorArr, (k - 1) * 3);
