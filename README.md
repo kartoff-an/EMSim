@@ -51,4 +51,4 @@ npx vite
 
 ## 📚 License
 
-Apache License 2.0. You’re free to use, modify, and distribute this project — even commercially — as long as you include proper attribution and state any changes. See the [LICENSE](./LICENSE) file for full details.
+**Apache License 2.0**. You’re free to use, modify, and distribute this project — even commercially — as long as you include proper attribution and state any changes. See the [LICENSE](./LICENSE) file for full details.
