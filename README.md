@@ -4,17 +4,11 @@ This is a web-based interactive simulation built with Three.js that visualizes e
 
 ## Features
 
-* **Point Charge Visualization**
-  Charges can be rendered as colored glows (red for positive, blue for negative) with smooth falloff.
+* **Point Charge Visualization** - Charges can be rendered as colored glows (red for positive, blue for negative) with smooth falloff.
 
-*  **Dynamic Electric Field Lines**
-  Real-time field line tracing using Runge-Kutta method based on the current configuration of charges.
+*  **Dynamic Electric Field Lines** - Real-time field line tracing using Runge-Kutta method based on the current configuration of charges.
 
-*  **Live Field Vectors**
-  Small arrows show the direction of the electric field at grid points.
-
-*  **Charge Interaction**
-  Drag-and-drop UI to add, move, or remove charges. Charges update the field in real-time.
+*  **Charge Interaction** - Drag-and-drop UI to add, move, or remove charges. Charges update the field in real-time.
 
 ##  Tech Stack
 
