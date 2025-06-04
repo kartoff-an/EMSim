@@ -25,7 +25,7 @@ This is a web-based interactive simulation built with **Three.js** that visualiz
 
 * Coulomb's Law:
   
-  $\displaystyle \mathbf{E} = \frac{1}{4\pi\varepsilon_0} \sum_i \frac{q_i(\mathbf{r} - \mathbf{r}_i)}{|\mathbf{r} - \mathbf{r}_i|^3}$
+  $\displaystyle \vec{E} = \frac{1}{4\pi\varepsilon_0} \sum_i \frac{q_i(\vec{r} - \vec{r}_i)}{|\vec{r} - \vec{r}_i|^3}$
 
 * Field lines follow $\vec{E}$, traced via Runge-Kutta calculation of the differential equation
   
