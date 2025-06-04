@@ -1,6 +1,7 @@
 # ⚡ Electric Field Simulation
 
 This is a web-based interactive simulation built with **Three.js** that visualizes electric fields due to point charges, charge interactions, and field lines in real-time. It's designed to be visually smooth, and educational.
+
 ## Features
 
 * **Point Charge Visualization**
