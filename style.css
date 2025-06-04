@@ -57,3 +57,14 @@
   transform: scale(1.1);
   box-shadow: 0 0 12px #ff3366cc;
 }
+
+.option-panel {
+  position: absolute;
+  top: 30px;
+  left: calc(100vw - 280px);
+  width: 250px;
+  height: 400px;
+  background-color: #555;
+  border-radius: 10px;
+  border: 5px solid #333 ;
+}

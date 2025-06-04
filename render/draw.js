@@ -1,7 +1,29 @@
 import * as THREE from 'three';
 import FieldLines from '../sim/FieldLines.js';
 
+function generateText(text) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 128;
+    canvas.height = 128;
+
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 64px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 64, 64);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.scale.set(0.3, 0.3, 1);
+
+    return sprite;
+}
+
 const Draw = {
+
+    // Draw point charges
     pointCharge: (ch) => {
         const group = new THREE.Group(); 
         const radius = 0.2;
@@ -41,23 +63,8 @@ const Draw = {
         group.add(ring);
 
         const chargeLabel = ch.charge > 0 ? '+' + ch.charge : ch.charge;
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 128;
-        canvas.height = 128;
-
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 64px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(chargeLabel, 64, 64);
-
-        const texture = new THREE.CanvasTexture(canvas);
-        const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
-        const sprite = new THREE.Sprite(spriteMaterial);
-        sprite.scale.set(0.3, 0.3, 1);
-
-        group.add(sprite);
+        const text = generateText(chargeLabel);
+        group.add(text);
 
 
         group.position.set(ch.position.x, ch.position.y, 0);
@@ -65,6 +72,9 @@ const Draw = {
         
         return group;
     },
+
+
+    //// Draw grid 
 
     grid: (camera, distance) => {
         const fov = THREE.MathUtils.degToRad(camera.fov);
@@ -80,6 +90,11 @@ const Draw = {
 
         return gridHelper;
     },
+
+
+
+
+    
 
     drawFields: (chargeConfig, N = 500) => {
         const fieldGroup = new THREE.Group();
