@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 
-function RK4(x0, y0, h, chargeConfig) { // Runge-Kutta Method
+function RK4(x0, y0, h, chargeConfig) {
     const f = (x, y) => {
         const E = chargeConfig.getElectricFieldAt(x, y);
-        if (E.lengthSq() === 0) return new THREE.Vector2(0, 0);
-        return E.clone().normalize(); // direction only
+        return E.lengthSq() == 0 ? new THREE.Vector2(0, 0) : E.clone().normalize();
     };
 
     const k1 = f(x0, y0).multiplyScalar(h);
@@ -19,49 +18,56 @@ function RK4(x0, y0, h, chargeConfig) { // Runge-Kutta Method
 }
 
 
-class FieldLines {
-    constructor(chargeConfig) {
-        this.chargeConfig = chargeConfig;
+function generateFieldLineTrace(chargeConfig, x0, y0, N, direction = 1) {
+    const trace = [];
+
+    let x = x0;
+    let y = y0;
+    const h = 0.01 * direction;
+
+    for (let i = 0; i < N; i++) {
+        const next = RK4(x, y, h, chargeConfig);
+
+        if (!isFinite(next.x) || !isFinite(next.y)) break;
+
+        const point = new THREE.Vector3(next.x, next.y, 0);
+        trace.push(point);
+
+        x = next.x;
+        y = next.y;
+
     }
 
-    generateTracePoints(x0, y0, N, direction = 1) {
-        const trace = [];
-
-        let x = x0;
-        let y = y0;
-        const h = 0.01 * direction;
-
-        const epsilon = 0.05;
-
-        for (let i = 0; i < N; i++) {
-            const next = RK4(x, y, h, this.chargeConfig);
-
-            if (!isFinite(next.x) || !isFinite(next.y)) break;
-
-            const point = new THREE.Vector3(next.x, next.y, 0);
-            trace.push(point);
-
-            x = next.x;
-            y = next.y;
-
-            for (const charge of this.chargeConfig.charges) {
-                const cx = charge.position.x;
-                const cy = charge.position.y;
-
-                const dx0 = cx - x0;
-                const dy0 = cy - y0;
-                if (dx0 * dx0 + dy0 * dy0 < 1e-6) continue;
-
-                const dx = cx - x;
-                const dy = cy - y;
-                if (dx * dx + dy * dy < epsilon * epsilon) {
-                    return trace; 
-                }
-            }
-        }
-
-        return trace;
-    }
+    return trace;
 }
 
-export default FieldLines;
+export function generateAllFieldLineTraces(chargeConfig, numLinesPerCharge, numPoints) {
+    const trace = [];
+    const buffer = [];
+    for (const charge of chargeConfig.charges) {
+        if (charge.charge == 0) continue;
+        for (let i = 0; i < numLinesPerCharge; i++) {
+            const vectors = [];
+            const radius = 0.1;
+            const { x, y } = charge.position;
+            const angle = (i / numLinesPerCharge) * 2 * Math.PI;
+            const x0 = x + radius * Math.cos(angle);
+            const y0 = y + radius * Math.sin(angle);
+
+            let forward = generateFieldLineTrace(chargeConfig, x0, y0, numPoints, 1);
+            let backward = generateFieldLineTrace(chargeConfig, x0, y0, numPoints, -1);
+
+            const line =  [...backward.reverse(), new THREE.Vector3(x0, y0, 0), ...forward];
+            vectors.push(...line);
+
+            if (vectors.length < 2) continue;
+            
+            for (const p of vectors) {
+                buffer.push(p.x, p.y, 0);
+            }
+            buffer.push(NaN, NaN, NaN);
+            trace.push(vectors);
+        }
+    }
+    return {trace: trace, buffer: buffer};
+}

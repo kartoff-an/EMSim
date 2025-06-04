@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import  Charge from './Charge.js';
 
 class ChargeConfig {
-    constructor() {
-        this.charges = [];
+    constructor(charges = []) {
+        this.charges = charges;
     }
 
     addCharge( x, y, charge ) {

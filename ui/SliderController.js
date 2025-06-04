@@ -78,14 +78,12 @@ class SliderController {
         }
         this.fieldLines = [];
 
-        const N = 2000;
-        for (let i = 0; i < 5; i++) {
-            const fieldLine = Draw.drawFields(this.chargesConfig, N);
-            if (fieldLine) {
-                this.scene.add(fieldLine);
-                this.fieldLines.push(fieldLine); // Store reference
-            }
-        }
+        
+        const fieldLine = Draw.drawFields(this.chargesConfig, true);
+        if (fieldLine) {
+            this.scene.add(fieldLine);
+            this.fieldLines.push(fieldLine);
+        } // Store reference
     }
 }
 
