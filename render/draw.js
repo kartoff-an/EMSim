@@ -187,7 +187,6 @@ const Draw = {
                     const coneGeom = new THREE.ConeGeometry(0.04, 0.08, 6);
                     const arrowMaterial = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false });
 
-                    // Create InstancedMesh for arrows
                     const instancedArrows = new THREE.InstancedMesh(coneGeom, arrowMaterial, arrowCount);
                     const dummy = new THREE.Object3D();
                     const colorsArray = new Float32Array(arrowCount * 3);
@@ -206,19 +205,19 @@ const Draw = {
                         const mag = E.length();
                         const colorArr = intensityToColor(mag, maxIntensity);
 
-                        // Store color for each instance
                         colorsArray.set(colorArr, (k - 1) * 3);
 
                         dummy.position.copy(mid);
+                        dummy.scale.set(0.6, 0.6, 0);
                         const axis = new THREE.Vector3(0, 1, 0);
                         const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, dir);
                         dummy.quaternion.copy(quaternion);
                         dummy.updateMatrix();
 
                         instancedArrows.setMatrixAt(k - 1, dummy.matrix);
+                        
                     }
 
-                    // Attach color attribute
                     instancedArrows.instanceColor = new THREE.InstancedBufferAttribute(colorsArray, 3);
 
                     instancedArrows.instanceMatrix.needsUpdate = true;
@@ -252,7 +251,7 @@ const Draw = {
 
         geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
         const lineMaterial = new THREE.LineBasicMaterial({ vertexColors: true });
-        const lineSegments = new THREE.Line(geometry, lineMaterial);
+        const lineSegments = new THREE.LineSegments(geometry, lineMaterial);
         fieldGroup.add(lineSegments);
 
         fieldGroup.renderOrder = 0;
@@ -269,19 +268,19 @@ function intensityToColor(intensity, maxIntensity) {
     let r, g, b;
 
     if (t < 0.33) {
-        // Green → Yellow
+        // Green -> Yellow
         const localT = t / 0.33;
         r = (1 - localT) * 46 + localT * 241;
         g = (1 - localT) * 204 + localT * 196;
         b = (1 - localT) * 113 + localT * 15;
     } else if (t < 0.66) {
-        // Yellow → Orange
+        // Yellow -> Orange
         const localT = (t - 0.33) / 0.33;
         r = (1 - localT) * 241 + localT * 230;
         g = (1 - localT) * 196 + localT * 126;
         b = (1 - localT) * 15 + localT * 34;
     } else {
-        // Orange → Red
+        // Orange -> Red
         const localT = (t - 0.66) / 0.34;
         r = (1 - localT) * 230 + localT * 231;
         g = (1 - localT) * 126 + localT * 76;
