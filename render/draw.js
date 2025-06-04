@@ -1,22 +1,6 @@
 import * as THREE from 'three';
 import FieldLines from '../sim/FieldLines.js';
 
-// Place this outside the Draw object to reuse across all charges
-const glowTexture = (() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-
-    const gradient = ctx.createRadialGradient(128, 128, 10, 128, 128, 128);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
-    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 256, 256);
-
-    return new THREE.CanvasTexture(canvas);
-})();
-
 const Draw = {
     pointCharge: (ch) => {
         const group = new THREE.Group(); 
@@ -74,24 +58,6 @@ const Draw = {
         sprite.scale.set(0.3, 0.3, 1);
 
         group.add(sprite);
-
-        /** if (Math.abs(ch.charge) > 0) {
-            const glowMaterial = new THREE.SpriteMaterial({
-                map: glowTexture,
-                color: new THREE.Color(circColor),
-                blending: THREE.AdditiveBlending,
-                transparent: true,
-                depthWrite: false
-            });
-
-            const glowSprite = new THREE.Sprite(glowMaterial);
-            const size = 1 + Math.abs(ch.charge / 10);
-            glowSprite.scale.set(size, size, 1);
-            glowSprite.position.z = -0.01;
-            glowSprite.renderOrder = 0;
-
-            group.add(glowSprite);
-        }**/
 
 
         group.position.set(ch.position.x, ch.position.y, 0);
@@ -216,7 +182,7 @@ const Draw = {
                 }
                 positions.push(NaN, NaN, NaN);
 
-                const arrowCount = Math.min(4, Math.floor(fullTrace.length / 100));
+                const arrowCount = Math.min(4, Math.floor(fullTrace.length / 200));
                 if (arrowCount > 0) {
                     const coneGeom = new THREE.ConeGeometry(0.04, 0.08, 6);
                     const arrowMaterial = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false });
