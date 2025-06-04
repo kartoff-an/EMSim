@@ -1,20 +1,14 @@
 # ⚡ Electric Field Simulation
 
-This is a web-based interactive simulation built with **Three.js** that visualizes electric fields due to point charges, charge interactions, and field lines in real-time. It's designed to be visually smooth, and educational.
+This is a web-based interactive simulation built with Three.js that visualizes electric fields due to point charges, charge interactions, and field lines in real-time. It's designed to be visually smooth and educational. I'm using this project to supplement my self-studying in electromagnetics by putting the concepts I'm learning into interactive simulations.
 
 ## Features
 
-* **Point Charge Visualization**
-  Charges can be rendered as colored glows (red for positive, blue for negative) with smooth falloff.
+* **Point Charge Visualization** - Charges can be rendered as colored glows (red for positive, blue for negative) with smooth falloff.
 
-*  **Dynamic Electric Field Lines**
-  Real-time field line tracing using Runge-Kutta method based on the current configuration of charges.
+*  **Dynamic Electric Field Lines** - Real-time field line tracing using Runge-Kutta method based on the current configuration of charges.
 
-*  **Live Field Vectors**
-  Small arrows show the direction of the electric field at grid points.
-
-*  **Charge Interaction**
-  Drag-and-drop UI to add, move, or remove charges. Charges update the field in real-time.
+*  **Charge Interaction** - Drag-and-drop UI to add, move, or remove charges. Charges update the field in real-time.
 
 ##  Tech Stack
 
@@ -32,12 +26,6 @@ This is a web-based interactive simulation built with **Three.js** that visualiz
   
   $\displaystyle \frac{dy}{dx} = \frac{E_y}{E_x}$
 
-##  Future Plans
-
-* Add equipotential surfaces/lines
-* Implement field line animations
-* Mobile support and UI polish
-* Option to toggle between 2D and 3D modes
 
 ##  Try It Out
 
