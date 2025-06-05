@@ -4,6 +4,26 @@ import Draw from './render/draw.js';
 import ChargeConfig from './sim/ChargeConfig.js';
 import SliderController from './ui/SliderController.js';
 
+
+const darkMode = window.matchMedia("(prefers-color-scheme: dark)");
+const themeToggle = document.querySelector('.theme-mode');
+let isDarkMode = darkMode.matches;
+
+function toggleDarkMode(isDarkMode) {
+  if (isDarkMode) {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+}
+
+themeToggle.addEventListener('click', () => {
+  toggleDarkMode(isDarkMode);
+  isDarkMode = !isDarkMode;
+})
+
+
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
 const renderer = new THREE.WebGLRenderer({ antialias: true });

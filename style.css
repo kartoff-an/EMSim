@@ -1,3 +1,18 @@
+:root {
+  --bg-1: #888;
+  --bg-2: white;
+  --toggle-pos: 0px;
+  --toggle-img: url('icons\sun-svgrepo-com.svg');
+}
+
+.dark-mode {
+  --bg-1: #151515;
+  --bg-2: #ccc;
+  --toggle-pos: 20px;
+  --toggle-img: url('icons\moon-stars-svgrepo-com.svg');
+}
+
+
 * {
     margin: 0;
     padding: 0;
@@ -64,7 +79,59 @@
   left: calc(100vw - 280px);
   width: 250px;
   height: 400px;
-  background-color: #aaa;
+  background-color: #222;
   border-radius: 10px;
-  border: 5px solid #333 ;
+  padding: 10px;
+  box-shadow: 2px 2px 20px 2px #111;
+}
+
+.header {
+  height: 50px;
+  border-bottom: 2px solid #282828;
+  display: grid;
+  align-items: center;
+}
+
+.theme-mode {
+  position: relative;
+  left: calc(100% - 50px);
+  height: 28px;
+  width: 48px;
+  background-color: white;
+  border-radius: 20px;
+  outline: 1px solid #262626;
+  align-items: center;
+  padding: 3.5px;
+  user-select: none;
+  transition: background-color 200ms ease-out;
+}
+
+.theme-mode .toggle {
+  position: relative;
+  left: 0px;
+  transform: translateX(0);
+  width: 21px;
+  height: 21px;
+  background-color: white;
+  border-radius: 100%;
+  padding: 2px;
+  border: 1px solid #888;
+  transition: transform 200ms ease-out;
+}
+
+.theme-mode .toggle img {
+  content: var(--toggle-img);
+  width: 15px;
+  height: 15px;
+  color: #151515;
+}
+
+@media (prefers-color-scheme: dark) {
+  .theme-mode {
+    background-color: var(--bg-1);
+  }
+  .theme-mode .toggle {
+    background-color: var(--bg-2);
+    transform: translateX(var(--toggle-pos));
+  }
 }
