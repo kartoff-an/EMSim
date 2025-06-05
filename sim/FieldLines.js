@@ -69,5 +69,5 @@ export function generateAllFieldLineTraces(chargeConfig, numLinesPerCharge, numP
             trace.push(vectors);
         }
     }
-    return {trace: trace, buffer: buffer};
+    return {trace: trace, buff: buffer};
 }

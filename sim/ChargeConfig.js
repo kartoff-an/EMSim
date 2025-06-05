@@ -1,15 +1,13 @@
 import * as THREE from 'three';
-import  Charge from './Charge.js';
 
 class ChargeConfig {
     constructor(charges = []) {
         this.charges = charges;
     }
 
-    addCharge( x, y, charge ) {
-        const pointCharge = new Charge( x, y, charge );
-        this.charges.push( pointCharge );
-        return pointCharge;
+    addCharge(charge ) {
+        this.charges.push( charge );
+        return charge;
     }
 
     removeCharge( index ) {

@@ -2,43 +2,35 @@ import * as THREE from 'three'
 import Draw from '../render/draw.js'
 
 class SliderController {
-    constructor(slider, camera, scene) {
+    constructor(slider, renderer, camera) {
         this.slider = slider;
+        this.renderer = renderer;
         this.camera = camera;
-        this.scene = scene;
-        this.renderer = null;
+        this.isVisible = false;
         this.activeMesh = null;
         this.activeMeshIndex = -1;
-        this.chargesConfig = null;
-        this.chargeMeshes = [];
-        this.isVisible = false;
-        this.fieldLines = [];
     }
 
-    init(chargesConfig, chargeMeshes, renderer) {
-        this.chargesConfig = chargesConfig;
-        this.chargeMeshes = chargeMeshes;
-        this.renderer = renderer;
-    }
-
-    toggleSlider(mesh, index) {
+    toggleSlider(mesh = null, index = -1) {
         if (this.isVisible || this.activeMesh == mesh) {
             this.slider.style.display = 'none';
             this.activeMesh = null;
             this.activeMeshIndex = -1;
             this.isVisible = false;
+            console.log("Yes");
         } else {
             this.activeMesh = mesh;
             this.activeMeshIndex = index;
-            this.updateSliderPosition();
+            this.#updateSliderPosition();
             this.slider.value = this.activeMesh.userData.charge;
             this.updateThumbColor();
             this.slider.style.display = 'block';
             this.isVisible = true;
+            console.log("No");
         }
     }
 
-    updateSliderPosition() {
+    #updateSliderPosition() {
         const vector = new THREE.Vector3(this.activeMesh.userData.position.x, this.activeMesh.userData.position.y, 0);
         vector.project(this.camera);
 
@@ -55,35 +47,6 @@ class SliderController {
         const val = parseFloat(this.slider.value);
         let color = val > 0 ? '#ff3366' : (val < 0 ? '#3366ff' : '#888');
         this.slider.style.setProperty('--thumb-color', color);
-    }
-
-    onSliderInput() {
-        const newCharge = parseFloat(this.slider.value);
-        this.chargesConfig.charges[this.activeMeshIndex].charge = newCharge;
-
-        const updatedMesh = Draw.pointCharge(this.chargesConfig.charges[this.activeMeshIndex]);
-        updatedMesh.userData.index = this.activeMeshIndex;
-
-        this.scene.remove(this.activeMesh);
-        this.chargeMeshes[this.activeMeshIndex] = updatedMesh;
-        this.activeMesh = updatedMesh;
-        this.scene.add(updatedMesh);
-
-        this.updateThumbColor();
-
-        
-
-        for (const line of this.fieldLines) {
-            this.scene.remove(line);
-        }
-        this.fieldLines = [];
-
-        
-        const fieldLine = Draw.drawFields(this.chargesConfig, true);
-        if (fieldLine) {
-            this.scene.add(fieldLine);
-            this.fieldLines.push(fieldLine);
-        } // Store reference
     }
 }
 

@@ -1,28 +1,9 @@
 import * as THREE from 'three';
 
+import Charge from './sim/Charge.js';
 import Draw from './render/draw.js';
 import ChargeConfig from './sim/ChargeConfig.js';
-import SliderController from './ui/SliderController.js';
-
-
-const darkMode = window.matchMedia("(prefers-color-scheme: dark)");
-const themeToggle = document.querySelector('.theme-mode');
-let isDarkMode = darkMode.matches;
-
-function toggleDarkMode(isDarkMode) {
-  if (isDarkMode) {
-    document.body.classList.add('dark-mode');
-  } else {
-    document.body.classList.remove('dark-mode');
-  }
-}
-
-themeToggle.addEventListener('click', () => {
-  toggleDarkMode(isDarkMode);
-  isDarkMode = !isDarkMode;
-})
-
-
+import SliderController from './controls/SliderController.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -43,10 +24,10 @@ const chargeMeshes = [];
 const slider = document.querySelector('.slider');
 slider.style.display = 'none';
 
-const sliderController = new SliderController(slider, camera, scene);
-sliderController.init(chargeConfig, chargeMeshes, renderer);
-slider.addEventListener('input', () => sliderController.onSliderInput());
+let activeMesh = null;
+let activeMeshIndex = -1;
 
+const sliderController = new SliderController(slider, renderer, camera);
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
@@ -56,38 +37,55 @@ renderer.domElement.addEventListener('click', (event) => {
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
 
+  let mesh = null;
+
   const intersects = raycaster.intersectObjects(chargeMeshes,);
-  let activeMesh = null;
   if (intersects.length > 0) {
-    let mesh = intersects[0].object;
+    mesh = intersects[0].object;
     while (mesh && !chargeMeshes.includes(mesh)) {
       mesh = mesh.parent;
     } 
-    const index = chargeMeshes.indexOf(mesh);
-    const charge = chargeConfig.charges[index];
-    mesh.userData.index = index;
+    activeMeshIndex = chargeMeshes.indexOf(mesh);
+    const charge = chargeConfig.charges[activeMeshIndex];
+    mesh.userData.index = activeMeshIndex;
     mesh.userData.charge = charge.charge;
     mesh.userData.position = charge.position;
     activeMesh = mesh;
     
-    sliderController.toggleSlider(mesh, index);
-    return;
+    sliderController.toggleSlider(mesh, activeMeshIndex);
+    
   }
-  if (!activeMesh) {
+
+  if (!mesh) {
     const planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     const point = new THREE.Vector3();
     raycaster.ray.intersectPlane(planeZ, point);
     
-    const newCharge = chargeConfig.addCharge(point.x, point.y, 0);
-    const chargeMesh = Draw.pointCharge(newCharge);
+    const newCharge = new Charge(point.x, point.y, 0);
+    const chargeMesh = newCharge.generateMesh();
+    chargeConfig.addCharge(newCharge);
     chargeMesh.userData.index = chargeConfig.charges.length - 1;
     chargeMeshes.push(chargeMesh);
     scene.add(chargeMesh);
-    sliderController.toggleSlider(null, -1);
+    sliderController.toggleSlider();
   }
 });
 
 
+slider.addEventListener('input', () => {
+  const newCharge = parseFloat(slider.value);
+  chargeConfig.charges[activeMeshIndex].charge = newCharge;
+  const updatedMesh = chargeConfig.charges[activeMeshIndex].generateMesh();
+  updatedMesh.userData.index = activeMeshIndex;
+  scene.remove(activeMesh);
+
+  chargeMeshes[activeMeshIndex] = updatedMesh;
+  activeMesh = updatedMesh;
+  scene.add(updatedMesh);
+  sliderController.updateThumbColor();
+  
+  Draw.drawFields(scene, chargeConfig, true);
+});
 
 function animate() {
   renderer.render( scene, camera );
