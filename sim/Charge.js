@@ -46,7 +46,7 @@ class Charge {
         const r = Math.sqrt(rSquared);
         const E = k * (q / rSquared);
 
-        return new THREE.Vector2(E * (dx / r), E * (dy / r));
+        return {x: E * (dx / r), y: E * (dy / r)};
     }
 
     generateMesh() {
