@@ -22,12 +22,17 @@ export function createGridVectors(chargeConfig, gridSize, divisions, group) {
 
     // --- Geometry and materials ---
     const coneGeom = new THREE.ConeGeometry(0.02, 0.05, 6);
+    const cylinderGeom = new THREE.CylinderGeometry(0.005, 0.005, 1, 8);
     coneGeom.rotateX(Math.PI / 2);
+    cylinderGeom.rotateX(Math.PI / 2);
 
-    const arrowMaterial = new THREE.MeshBasicMaterial({ vertexColors: false, depthWrite: true });
+    const arrowMaterial = new THREE.MeshBasicMaterial({ vertexColors: false, depthWrite: false });
+    const tailMaterial = new THREE.MeshBasicMaterial({ vertexColors: false, depthWrite: false });
     const instancedArrows = new THREE.InstancedMesh(coneGeom, arrowMaterial, validArrowCount);
+    const instancedTails = new THREE.InstancedMesh(cylinderGeom, tailMaterial, validArrowCount);
     const instanceColorBuffer = new THREE.InstancedBufferAttribute(new Float32Array(validArrowCount * 3), 3);
     instancedArrows.instanceColor = instanceColorBuffer;
+    instancedTails.instanceColor = instanceColorBuffer;
 
     const dummy = new THREE.Object3D();
     const zAxis = new THREE.Vector3(0, 0, 1);
@@ -45,15 +50,22 @@ export function createGridVectors(chargeConfig, gridSize, divisions, group) {
             const unitVector = E.clone().normalize();
             const intensity = mag / 500e8;
             const colorArr = intensityToColor(intensity, maxIntensity);
-            const scale = THREE.MathUtils.clamp(mag / 1e9, 0.4, 1.5);
+            const scale = THREE.MathUtils.clamp(mag / 1e9, 0, 1.2);
+            const shaftLength = 0.3 * Math.max(THREE.MathUtils.clamp(mag / 800e8, 0.4, 1.2), 0.4);
 
             // Set base orientation
             dummy.position.set(x, y, 0);
             dummy.scale.set(scale, scale, scale);
             dummy.quaternion.setFromUnitVectors(zAxis, unitVector);
             dummy.updateMatrix();
-
             instancedArrows.setMatrixAt(index, dummy.matrix);
+
+            dummy.position.set(x - unitVector.x * (shaftLength / 3), y - unitVector.y * (shaftLength / 3), 0);
+            dummy.scale.set(scale, scale, shaftLength); // Only Z (length) is scaled differently
+            dummy.quaternion.setFromUnitVectors(zAxis, unitVector);
+            dummy.updateMatrix();
+            instancedTails.setMatrixAt(index, dummy.matrix);
+
             instanceColorBuffer.set(colorArr, index * 3);
 
             // Offset to base of cone
@@ -73,6 +85,9 @@ export function createGridVectors(chargeConfig, gridSize, divisions, group) {
     instancedArrows.instanceMatrix.needsUpdate = true;
     instanceColorBuffer.needsUpdate = true;
     instancedArrows.renderOrder = 0;
+    instancedTails.renderOrder = 0;
+
 
     group.add(instancedArrows);
+    group.add(instancedTails);
 }

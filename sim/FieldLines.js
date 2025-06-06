@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createGridVectors } from '../sim/FieldVectors.js';
 import { intensityToColor, getColorMapping } from '../utils/color.js';
+import { gridSize } from '../render/draw';
 
 function RK4(x0, y0, h, chargeConfig) {
     const f = (x, y, out) => {
@@ -61,7 +62,7 @@ function generateFieldLineTrace(chargeConfig, x0, y0, N, direction = 1) {
 function generateAllFieldLineTraces(chargeConfig) {
     const trace = [];
     const buffer = [];
-    const numPoints = 1000;
+    const numPoints = 1500;
     for (const charge of chargeConfig.charges) {
         if (charge.charge == 0) continue;
 
@@ -188,7 +189,6 @@ export function drawFields (scene, chargeConfig, shouldShowArrows = true, should
     }
 
     if (shouldShowGridVectors) {
-        let gridSize = 50;
         createGridVectors(chargeConfig, gridSize, 50, fieldGroup);
     }
 

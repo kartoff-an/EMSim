@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 
-let gridSize = 0;
+export let gridSize = 0;
 
 const Draw = {
     grid: (camera, distance) => {
