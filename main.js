@@ -4,6 +4,7 @@ import Charge from './sim/Charge.js';
 import Draw from './render/draw.js';
 import ChargeConfig from './sim/ChargeConfig.js';
 import SliderController from './controls/SliderController.js';
+import { drawFields } from './sim/FieldLines.js';
 
 // --- Graphics Setup ---
 const graphics = {
@@ -19,9 +20,9 @@ graphics.renderer.setPixelRatio(Math.min(window.devicePixelRatio * 10, 2));
 
 // --- DOM Setup ---
 const simField = document.querySelector(".sim-field");
-simField.appendChild(graphics.renderer.domElement);
-
 const slider = document.querySelector('.slider');
+
+simField.appendChild(graphics.renderer.domElement);
 slider.style.display = 'none';
 
 // --- Simulation Data ---
@@ -36,6 +37,7 @@ const charges = {
 const sliderController = new SliderController(slider, charges, graphics);
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
+let activeChargeMeshIndex = -1;
 
 graphics.renderer.domElement.addEventListener('click', (event) => {
   const rect = graphics.renderer.domElement.getBoundingClientRect();
@@ -57,6 +59,7 @@ graphics.renderer.domElement.addEventListener('click', (event) => {
     mesh.userData.index = index;
     mesh.userData.charge = charge.charge;
     mesh.userData.position = charge.position;
+    activeChargeMeshIndex = index;
 
     sliderController.toggleSlider(mesh, index);
   }
@@ -71,16 +74,53 @@ graphics.renderer.domElement.addEventListener('click', (event) => {
 
     charges.config.addCharge(newCharge);
     chargeMesh.userData.index = charges.list.length - 1;
-    charges.meshes.push(chargeMesh);
 
     graphics.scene.add(chargeMesh);
+    charges.meshes.push(chargeMesh);
     sliderController.toggleSlider(null, -1);
   }
 });
 
-slider.addEventListener('input', () => {
-  sliderController.updateCharge(slider.value);
+
+
+slider.addEventListener('input', () => sliderController.updateCharge(slider.value));
+
+
+document.querySelector('.clear-all-btn').addEventListener('click', () => {
+  charges.list.length = 0;
+  charges.meshes.forEach(mesh => {
+    mesh.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+    });
+    graphics.scene.remove(mesh);
+
+
+  });
+  charges.meshes.length = 0;;
+  
+  sliderController.toggleSlider();
+  drawFields(graphics.scene, charges.config, true, true);
 });
+
+document.querySelector('.delete-icon').addEventListener('click', () => {
+  const mesh = charges.meshes[activeChargeMeshIndex];
+  if (mesh) {
+    charges.list.splice(activeChargeMeshIndex, 1);
+
+    mesh.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+    });
+
+    charges.meshes.splice(activeChargeMeshIndex, 1);
+
+    graphics.scene.remove(mesh);
+    activeChargeMeshIndex = -1;
+    sliderController.toggleSlider();
+    drawFields(graphics.scene, charges.config, true, true);
+  }
+})
 
 // --- Animation Loop ---
 function animate() {
