@@ -14,7 +14,7 @@ const GREY = 0x282828;
 
 class Charge {
     constructor(posX, posY, charge = 0) {
-        this.position = new THREE.Vector2( roundFloat(posX), roundFloat(posY) );
+        this.position = new THREE.Vector3( roundFloat(posX), roundFloat(posY), 0 );
         this.charge = charge.toFixed(2);
     }
 
@@ -27,7 +27,7 @@ class Charge {
         const r = Math.sqrt(rSquared);
         const E = k * (q / rSquared);
 
-        return {x: E * (dx / r), y: E * (dy / r)};
+        return {x: E * (dx / r), y: E * (dy / r), z: 0};
     }
 
     generateMesh() {

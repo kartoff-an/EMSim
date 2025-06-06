@@ -15,7 +15,7 @@ class ChargeConfig {
     }
 
     getElectricFieldAt( x, y ) {
-        let totalField = new THREE.Vector2( 0, 0 );
+        let totalField = new THREE.Vector3( 0, 0, 0 );
         for ( const charge of this.charges ) {
             const E = charge.electricFieldAt( x, y );
             totalField.add( E );

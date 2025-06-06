@@ -3,36 +3,36 @@ import { createGridVectors } from '../sim/FieldVectors.js';
 import { intensityToColor, getColorMapping } from '../utils/color.js';
 
 function RK4(x0, y0, h, chargeConfig) {
-  const f = (x, y, out) => {
-    const E = chargeConfig.getElectricFieldAt(x, y);
-    const len = Math.sqrt(E.x * E.x + E.y * E.y);
-    if (len === 0) {
-      out[0] = 0;
-      out[1] = 0;
-    } else {
-      out[0] = E.x / len;
-      out[1] = E.y / len;
-    }
-  };
+    const f = (x, y, out) => {
+        const E = chargeConfig.getElectricFieldAt(x, y);
+        const len = Math.sqrt(E.x * E.x + E.y * E.y);
+        if (len === 0) {
+        out[0] = 0;
+        out[1] = 0;
+        } else {
+        out[0] = E.x / len;
+        out[1] = E.y / len;
+        }
+    };
 
-  const E = chargeConfig.getElectricFieldAt(x0, y0);
-  const fieldStrength = Math.sqrt(E.x * E.x + E.y * E.y);
-  const adaptiveH = Math.min(h * (1 + 0.1 / (fieldStrength + 0.01)), 0.05);
+    const E = chargeConfig.getElectricFieldAt(x0, y0);
+    const fieldStrength = Math.sqrt(E.x * E.x + E.y * E.y);
+    const adaptiveH = Math.min(h * (1 + 0.1 / (fieldStrength + 0.01)), 0.05);
 
-  const k1 = [0, 0], k2 = [0, 0], k3 = [0, 0], k4 = [0, 0];
-  f(x0, y0, k1);
-  k1[0] *= adaptiveH; k1[1] *= adaptiveH;
-  f(x0 + k1[0] / 2, y0 + k1[1] / 2, k2);
-  k2[0] *= adaptiveH; k2[1] *= adaptiveH;
-  f(x0 + k2[0] / 2, y0 + k2[1] / 2, k3);
-  k3[0] *= adaptiveH; k3[1] *= adaptiveH;
-  f(x0 + k3[0], y0 + k3[1], k4);
-  k4[0] *= adaptiveH; k4[1] *= adaptiveH;
+    const k1 = [0, 0], k2 = [0, 0], k3 = [0, 0], k4 = [0, 0];
+    f(x0, y0, k1);
+    k1[0] *= adaptiveH; k1[1] *= adaptiveH;
+    f(x0 + k1[0] / 2, y0 + k1[1] / 2, k2);
+    k2[0] *= adaptiveH; k2[1] *= adaptiveH;
+    f(x0 + k2[0] / 2, y0 + k2[1] / 2, k3);
+    k3[0] *= adaptiveH; k3[1] *= adaptiveH;
+    f(x0 + k3[0], y0 + k3[1], k4);
+    k4[0] *= adaptiveH; k4[1] *= adaptiveH;
 
-  const dx = (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]) / 6;
-  const dy = (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]) / 6;
+    const dx = (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]) / 6;
+    const dy = (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]) / 6;
 
-  return { x: x0 + dx, y: y0 + dy };
+    return { x: x0 + dx, y: y0 + dy };
 }
 
 function generateFieldLineTrace(chargeConfig, x0, y0, N, direction = 1) {
