@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { createGridVectors } from '../sim/FieldVectors.js';
+import { intensityToColor, getColorMapping } from '../utils/color.js';
 
 function RK4(x0, y0, h, chargeConfig) {
   const f = (x, y, out) => {
@@ -56,7 +58,7 @@ function generateFieldLineTrace(chargeConfig, x0, y0, N, direction = 1) {
     return trace;
 }
 
-export function generateAllFieldLineTraces(chargeConfig) {
+function generateAllFieldLineTraces(chargeConfig) {
     const trace = [];
     const buffer = [];
     const numPoints = 1000;
@@ -88,4 +90,109 @@ export function generateAllFieldLineTraces(chargeConfig) {
         }
     }
     return {trace: trace, buff: buffer};
+}
+
+
+function addLineToGroup(buffer, chargeConfig, group) {
+    const positionAttr = new Float32Array(buffer);
+    const geometry = new THREE.BufferGeometry();
+    const colors = getColorMapping(positionAttr, chargeConfig);
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positionAttr, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+    const lineMaterial = new THREE.LineBasicMaterial({ vertexColors: true });
+    const line = new THREE.Line(geometry, lineMaterial);
+    group.add(line);
+}
+
+function createLineArrows(trace, chargeConfig) {
+    const arrowCount = Math.min(6, Math.floor(trace.length / 500));
+    const maxIntensity = 1;
+
+    const coneGeom = new THREE.ConeGeometry(0.04, 0.08, 6);
+    const arrowMaterial = new THREE.MeshBasicMaterial({vertexColors: true, depthWrite: true });
+    const instancedArrows = new THREE.InstancedMesh(coneGeom, arrowMaterial, arrowCount);
+    const dummy = new THREE.Object3D();
+    const colorsArray = new Float32Array(arrowCount * 3);
+    const axis = new THREE.Vector3(0, 1, 0);
+
+    for (let k = 1; k <= arrowCount; k++) {
+        const index = Math.floor((k * trace.length) / (arrowCount + 1));
+
+        if (index >= trace.length - 1) continue;
+
+        const p1 = trace[index];
+        const p2 = trace[index + 1];
+        const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+        const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
+        const E = chargeConfig.getElectricFieldAt(mid.x, mid.y);
+        const mag = E.length();
+        const colorArr = intensityToColor((mag / 500e8).toFixed(2), maxIntensity);
+        const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, dir);
+
+        dummy.position.copy(mid);
+        dummy.renderOrder = 0;
+        dummy.scale.set(0.8, 0.8, 0);
+        dummy.quaternion.copy(quaternion);
+        dummy.updateMatrix();
+
+        colorsArray.set(colorArr, (k - 1) * 3);
+        instancedArrows.setMatrixAt(k - 1, dummy.matrix);
+    }
+
+    instancedArrows.instanceColor = new THREE.InstancedBufferAttribute(colorsArray, 3);
+    instancedArrows.instanceMatrix.needsUpdate = true;
+    return instancedArrows;
+}
+
+
+let fieldLines = [];
+export function drawFields (scene, chargeConfig, shouldShowArrows = true, shouldShowGridVectors = true) {
+    for (const line of fieldLines) {
+        line.traverse((child) => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) child.material.dispose();
+        });
+        scene.remove(line);
+    }
+    fieldLines.length = 0;
+
+    const fieldGroup = new THREE.Group();
+    const positions = generateAllFieldLineTraces(chargeConfig);
+
+    if (shouldShowArrows && positions.trace) {
+        for (let i = 0; i < positions.trace.length; i++) {
+            const arrows = createLineArrows(positions.trace[i], chargeConfig);
+            fieldGroup.add(arrows);
+        }
+    }
+
+    const buff = positions.buff;
+    let currentLine = [];
+
+    for (let i = 0; i < buff.length; i += 3) {
+        const x = buff[i], y = buff[i + 1], z = buff[i + 2];
+
+        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
+            if (currentLine.length >= 6) {
+                addLineToGroup(currentLine, chargeConfig, fieldGroup);
+            }
+            currentLine = [];
+        } else {
+            currentLine.push(x, y, z);
+        }
+    }
+    if (currentLine.length >= 6) {
+        addLineToGroup(currentLine, chargeConfig, fieldGroup);
+    }
+
+    if (shouldShowGridVectors) {
+        let gridSize = 50;
+        createGridVectors(chargeConfig, gridSize, 50, fieldGroup);
+    }
+
+    fieldGroup.renderOrder = 0;
+    scene.add(fieldGroup);
+    fieldLines.push(fieldGroup);
 }

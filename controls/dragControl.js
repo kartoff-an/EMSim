@@ -61,9 +61,9 @@ function onMouseUp() {
     draggableMesh = null;
 }
 
-export function initDrag(rendererInput, cameraInput, chargeList) {
-    renderer = rendererInput;
-    camera = cameraInput;
+export function initDrag(graphics, chargeList) {
+    renderer = graphics.renderer;
+    camera = graphics.camera;
     charges = chargeList;
 
     renderer.domElement.addEventListener('mousedown', onMouseDown, false);

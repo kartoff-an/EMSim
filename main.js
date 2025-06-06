@@ -4,60 +4,57 @@ import Charge from './sim/Charge.js';
 import Draw from './render/draw.js';
 import ChargeConfig from './sim/ChargeConfig.js';
 import SliderController from './controls/SliderController.js';
-//import { initDrag, setDraggableMeshes } from './controls/dragControl.js';
-//import { FieldVectors } from './sim/FieldVectors.js';
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const graphics = {
+  scene: new THREE.Scene(),
+  camera: new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 ),
+  renderer: new THREE.WebGLRenderer({ antialias: true }),
+}
+const config = new ChargeConfig();
+const charges = {
+  config: config,
+  list: config.charges,
+  meshes: []
+}
 
-scene.background = new THREE.Color(0x181818);
-scene.add(Draw.grid(camera, 10));
-camera.position.z = 10;
-renderer.setSize( window.innerWidth - 1, window.innerHeight - 1 );
-renderer.setPixelRatio(Math.min(window.devicePixelRatio * 10,   2));
+graphics.scene.background = new THREE.Color(0x181818);
+graphics.scene.add(Draw.grid(graphics.camera, 10));
+graphics.camera.position.z = 10;
+graphics.renderer.setSize( window.innerWidth - 1, window.innerHeight - 1 );
+graphics.renderer.setPixelRatio(Math.min(window.devicePixelRatio * 10,   2));
 
 const simField = document.querySelector( ".sim-field" );
-simField.appendChild( renderer.domElement );
-
-const chargeConfig = new ChargeConfig();
-const chargeMeshes = [];
-
-//initDrag(renderer, camera, chargeConfig.charges);
+simField.appendChild( graphics.renderer.domElement );
 
 const slider = document.querySelector('.slider');
 slider.style.display = 'none';
 
-let activeMesh = null;
-let activeMeshIndex = -1;
-
-const sliderController = new SliderController(slider, renderer, camera, chargeConfig, chargeMeshes, scene);
+const sliderController = new SliderController(slider, charges, graphics);
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-renderer.domElement.addEventListener('click', (event) => {
-  const rect = renderer.domElement.getBoundingClientRect();
+graphics.renderer.domElement.addEventListener('click', (event) => {
+  const rect = graphics.renderer.domElement.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
+  raycaster.setFromCamera(mouse, graphics.camera);
 
   let mesh = null;
 
-  const intersects = raycaster.intersectObjects(chargeMeshes,);
+  const intersects = raycaster.intersectObjects(charges.meshes,);
   if (intersects.length > 0) {
     mesh = intersects[0].object;
-    while (mesh && !chargeMeshes.includes(mesh)) {
+    while (mesh && !charges.meshes.includes(mesh)) {
       mesh = mesh.parent;
     } 
-    activeMeshIndex = chargeMeshes.indexOf(mesh);
-    //setDraggableMeshes(chargeMeshes);
-    const charge = chargeConfig.charges[activeMeshIndex];
-    mesh.userData.index = activeMeshIndex;
+
+    const index = charges.meshes.indexOf(mesh);
+    const charge = charges.list[index];
+    mesh.userData.index = index;
     mesh.userData.charge = charge.charge;
     mesh.userData.position = charge.position;
-    activeMesh = mesh;
     
-    sliderController.toggleSlider(mesh, activeMeshIndex);
+    sliderController.toggleSlider(mesh, index);
     
   }
 
@@ -69,34 +66,22 @@ renderer.domElement.addEventListener('click', (event) => {
     const newCharge = new Charge(point.x, point.y, 0);
     const chargeMesh = newCharge.generateMesh();
     //setDraggableMeshes(chargeMeshes)
-    chargeConfig.addCharge(newCharge);
-    chargeMesh.userData.index = chargeConfig.charges.length - 1;
-    chargeMeshes.push(chargeMesh);
-    scene.add(chargeMesh);
-    sliderController.toggleSlider();
+    charges.config.addCharge(newCharge);
+    chargeMesh.userData.index = charges.list.length - 1;
+    charges.meshes.push(chargeMesh);
+
+    graphics.scene.add(chargeMesh);
+    sliderController.toggleSlider(null, -1);
   }
 });
 
-/**function debounce(func, wait) {
-  let timeout;
-  return (...args) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}**/
 
 slider.addEventListener('input', () => {
   sliderController.updateCharge(slider.value);
 });
 
-//let frameCount = 0;
+
 function animate() {
-  /**if (frameCount % 3 == 0) {
-      Draw.drawFields(scene, chargeConfig, true);
-  }
-  frameCount++;**/
-  
-  //FieldVectors.drawFieldVectors(scene, chargeConfig);
-  renderer.render( scene, camera );
+  graphics.renderer.render( graphics.scene, graphics.camera );
 }
-renderer.setAnimationLoop( animate );
+graphics.renderer.setAnimationLoop( animate );
