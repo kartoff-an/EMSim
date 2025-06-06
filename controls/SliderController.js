@@ -58,7 +58,13 @@ class SliderController {
         this.chargeConfig.charges[this.activeMeshIndex].charge = newCharge;
         const updatedMesh = this.chargeConfig.charges[this.activeMeshIndex].generateMesh();
         updatedMesh.userData.index = this.activeMeshIndex;
+        
+        this.activeMesh.traverse((child) => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) child.material.dispose();
+        });
         this.scene.remove(this.activeMesh);
+        
         this.chargeMeshes[this.activeMeshIndex] = updatedMesh;
         this.activeMesh = updatedMesh;
         this.scene.add(updatedMesh);

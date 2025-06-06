@@ -1,7 +1,5 @@
 import * as THREE from 'three';
 
-const tempVec3 = new THREE.Vector3();
-
 function RK4(x0, y0, h, chargeConfig) {
   const f = (x, y, out) => {
     const E = chargeConfig.getElectricFieldAt(x, y);
@@ -47,7 +45,7 @@ function generateFieldLineTrace(chargeConfig, x0, y0, N, direction = 1) {
 
         if (!isFinite(next.x) || !isFinite(next.y)) break;
 
-        const point = new THREE.Vector3(next.x, next.y, 0);
+        const point = {x: next.x, y: next.y, z: 0};
         trace.push(point);
 
         x = next.x;
@@ -58,11 +56,14 @@ function generateFieldLineTrace(chargeConfig, x0, y0, N, direction = 1) {
     return trace;
 }
 
-export function generateAllFieldLineTraces(chargeConfig, numLinesPerCharge, numPoints) {
+export function generateAllFieldLineTraces(chargeConfig) {
     const trace = [];
     const buffer = [];
+    const numPoints = 1000;
     for (const charge of chargeConfig.charges) {
         if (charge.charge == 0) continue;
+
+        const numLinesPerCharge  = Math.round(4 + 0.8 * Math.abs(charge.charge));
         for (let i = 0; i < numLinesPerCharge; i++) {
             const vectors = [];
             const radius = 0.1;
@@ -74,7 +75,7 @@ export function generateAllFieldLineTraces(chargeConfig, numLinesPerCharge, numP
             let forward = generateFieldLineTrace(chargeConfig, x0, y0, numPoints, 1);
             let backward = generateFieldLineTrace(chargeConfig, x0, y0, numPoints, -1);
 
-            const line =  [...backward.reverse(), new THREE.Vector3(x0, y0, 0), ...forward];
+            const line =  [...backward.reverse(), x0, y0, 0, ...forward];
             vectors.push(...line);
 
             if (vectors.length < 2) continue;
