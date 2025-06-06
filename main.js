@@ -30,7 +30,7 @@ slider.style.display = 'none';
 let activeMesh = null;
 let activeMeshIndex = -1;
 
-const sliderController = new SliderController(slider, renderer, camera);
+const sliderController = new SliderController(slider, renderer, camera, chargeConfig, chargeMeshes, scene);
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
@@ -76,20 +76,17 @@ renderer.domElement.addEventListener('click', (event) => {
   }
 });
 
+function debounce(func, wait) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
 
-slider.addEventListener('input', () => {
-  const newCharge = parseFloat(slider.value);
-  chargeConfig.charges[activeMeshIndex].charge = newCharge;
-  const updatedMesh = chargeConfig.charges[activeMeshIndex].generateMesh();
-  updatedMesh.userData.index = activeMeshIndex;
-  scene.remove(activeMesh);
-
-  chargeMeshes[activeMeshIndex] = updatedMesh;
-  activeMesh = updatedMesh;
-  scene.add(updatedMesh);
-  sliderController.updateThumbColor();
-  Draw.drawFields(scene, chargeConfig, true);
-});
+slider.addEventListener('input', debounce(() => {
+  sliderController.updateCharge(slider.value);
+}, 20));
 
 let frameCount = 0;
 function animate() {
