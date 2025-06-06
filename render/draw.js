@@ -61,12 +61,12 @@ function addLineToGroup(buffer, chargeConfig, group) {
     group.add(line);
 }
 
-function createArrows(trace, chargeConfig) {
+function createLineArrows(trace, chargeConfig) {
     const arrowCount = Math.min(6, Math.floor(trace.length / 500));
     const maxIntensity = 1;
 
     const coneGeom = new THREE.ConeGeometry(0.04, 0.08, 6);
-    const arrowMaterial = new THREE.MeshBasicMaterial({ depthWrite: true});
+    const arrowMaterial = new THREE.MeshBasicMaterial({vertexColors: true, depthWrite: true });
     const instancedArrows = new THREE.InstancedMesh(coneGeom, arrowMaterial, arrowCount);
     const dummy = new THREE.Object3D();
     const colorsArray = new Float32Array(arrowCount * 3);
@@ -94,7 +94,6 @@ function createArrows(trace, chargeConfig) {
 
         colorsArray.set(colorArr, (k - 1) * 3);
         instancedArrows.setMatrixAt(k - 1, dummy.matrix);
-        
     }
 
     instancedArrows.instanceColor = new THREE.InstancedBufferAttribute(colorsArray, 3);
@@ -103,7 +102,76 @@ function createArrows(trace, chargeConfig) {
 }
 
 
+function createGridVectors(chargeConfig, gridSize, divisions, group) {
+    const maxIntensity = 1;
+    const step = gridSize / divisions;
+    const halfSize = gridSize / 2;
+
+    let validArrowCount = 0;
+    for (let i = 0; i <= divisions; i++) {
+        const x = -halfSize + i * step;
+        for (let j = 0; j <= divisions; j++) {
+            const y = -halfSize + j * step;
+            const E = chargeConfig.getElectricFieldAt(x, y);
+            if (E.length() > 0) validArrowCount++;
+        }
+    }
+
+    const coneGeom = new THREE.ConeGeometry(0.02, 0.05, 6);
+    coneGeom.rotateX(Math.PI / 2); 
+    const arrowMaterial = new THREE.MeshBasicMaterial({ vertexColors: false, depthWrite: true });
+    const instancedArrows = new THREE.InstancedMesh(coneGeom, arrowMaterial, validArrowCount);
+    const instanceColorBuffer = new THREE.InstancedBufferAttribute(new Float32Array(validArrowCount * 3), 3);
+    instancedArrows.instanceColor = instanceColorBuffer;
+
+    const dummy = new THREE.Object3D();
+    const zAxis = new THREE.Vector3(0, 0, 1);
+    let index = 0;
+
+    for (let i = 0; i <= divisions; i++) {
+        const x = -halfSize + i * step;
+        for (let j = 0; j <= divisions; j++) {
+            const y = -halfSize + j * step;
+            const E = chargeConfig.getElectricFieldAt(x, y);
+            const mag = E.length();
+            if (mag === 0) continue;
+
+            const fieldVec = new THREE.Vector3(E.x, E.y, 0).normalize();
+            const intensity = mag / 500e8;
+            const colorArr = intensityToColor(intensity, maxIntensity);
+           
+            dummy.position.set(x, y, 0);
+            const scale = THREE.MathUtils.clamp(mag / 1e9, 0.4, 1.5);
+            dummy.scale.set(scale, scale, scale);
+            dummy.quaternion.setFromUnitVectors(zAxis, fieldVec);
+            dummy.updateMatrix();
+
+            instancedArrows.setMatrixAt(index, dummy.matrix);
+            instanceColorBuffer.set(colorArr, index * 3);
+
+            const perpVec = new THREE.Vector3(-fieldVec.y, fieldVec.x, 0).normalize(); 
+            dummy.quaternion.setFromUnitVectors(zAxis, perpVec);
+
+            const coneBaseOffset = fieldVec.clone().multiplyScalar(-0.05 * scale);
+            dummy.position.set(x + coneBaseOffset.x, y + coneBaseOffset.y, 0);
+            dummy.scale.set(scale, scale, scale);
+            dummy.updateMatrix();
+
+            index++;
+        }
+    }
+
+    instancedArrows.instanceMatrix.needsUpdate = true;
+    instanceColorBuffer.needsUpdate = true;
+    instancedArrows.renderOrder = 0;
+
+    group.add(instancedArrows);
+}
+
+
+
 let fieldLines = [];
+let gridSize = 0;
 
 const Draw = {
     grid: (camera, distance) => {
@@ -111,36 +179,36 @@ const Draw = {
         const heightAtDistance = 2 * Math.tan(fov / 2) * distance;
         const widthAtDistance = heightAtDistance * camera.aspect;
 
-        const size = Math.max(widthAtDistance, heightAtDistance);
+        gridSize = Math.max(widthAtDistance, heightAtDistance);
 
         const gridHelper = new THREE.GridHelper(1, 50, 0x222222, 0x222222);
-        gridHelper.scale.set(size, 1, size);
+        gridHelper.scale.set(gridSize, 1, gridSize);
         gridHelper.rotation.x = Math.PI / 2;
         gridHelper.position.z = 0;
 
         return gridHelper;
     },
 
-
-    // Draw electric field lines
-
-    drawFields: (scene, chargeConfig, shouldShowArrows) => {
+    drawFields: (scene, chargeConfig, shouldShowArrows = true, shouldShowGridVectors = true) => {
         for (const line of fieldLines) {
+            line.traverse((child) => {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+            });
             scene.remove(line);
         }
         fieldLines.length = 0;
 
         const fieldGroup = new THREE.Group();
-        const positions = generateAllFieldLineTraces(chargeConfig, 12, 2000);
+        const positions = generateAllFieldLineTraces(chargeConfig);
 
         if (shouldShowArrows && positions.trace) {
             for (let i = 0; i < positions.trace.length; i++) {
-                const arrows = createArrows(positions.trace[i], chargeConfig);
+                const arrows = createLineArrows(positions.trace[i], chargeConfig);
                 fieldGroup.add(arrows);
             }
         }
 
-        
         const buff = positions.buff;
         let currentLine = [];
 
@@ -148,7 +216,7 @@ const Draw = {
             const x = buff[i], y = buff[i + 1], z = buff[i + 2];
 
             if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
-                if (currentLine.length >= 6) { 
+                if (currentLine.length >= 6) {
                     addLineToGroup(currentLine, chargeConfig, fieldGroup);
                 }
                 currentLine = [];
@@ -158,6 +226,10 @@ const Draw = {
         }
         if (currentLine.length >= 6) {
             addLineToGroup(currentLine, chargeConfig, fieldGroup);
+        }
+
+        if (shouldShowGridVectors) {
+            createGridVectors(chargeConfig, gridSize, 50, fieldGroup);
         }
 
         fieldGroup.renderOrder = 0;
