@@ -1,73 +1,90 @@
 import * as THREE from 'three';
 
+const tempVec3 = new THREE.Vector3();
+
 function RK4(x0, y0, h, chargeConfig) {
-    const f = (x, y) => {
-        const E = chargeConfig.getElectricFieldAt(x, y);
-        return E.lengthSq() == 0 ? new THREE.Vector2(0, 0) : E.clone().normalize();
-    };
+  const f = (x, y, out) => {
+    const E = chargeConfig.getElectricFieldAt(x, y);
+    if (E.lengthSq() === 0) {
+      out[0] = 0;
+      out[1] = 0;
+    } else {
+      const len = Math.sqrt(E.x * E.x + E.y * E.y);
+      out[0] = E.x / len;
+      out[1] = E.y / len;
+    }
+  };
 
-    const k1 = f(x0, y0).multiplyScalar(h);
-    const k2 = f(x0 + k1.x / 2, y0 + k1.y / 2).multiplyScalar(h);
-    const k3 = f(x0 + k2.x / 2, y0 + k2.y / 2).multiplyScalar(h);
-    const k4 = f(x0 + k3.x, y0 + k3.y).multiplyScalar(h);
+  const k1 = [0, 0], k2 = [0, 0], k3 = [0, 0], k4 = [0, 0];
 
-    const dx = ((k1.x + 2 * k2.x + 2 * k3.x + k4.x) / 6);
-    const dy = ((k1.y + 2 * k2.y + 2 * k3.y + k4.y) / 6);
+  f(x0, y0, k1);
+  k1[0] *= h; k1[1] *= h;
 
-    return { x: x0 + dx, y: y0 + dy };
+  f(x0 + k1[0] / 2, y0 + k1[1] / 2, k2);
+  k2[0] *= h; k2[1] *= h;
+
+  f(x0 + k2[0] / 2, y0 + k2[1] / 2, k3);
+  k3[0] *= h; k3[1] *= h;
+
+  f(x0 + k3[0], y0 + k3[1], k4);
+  k4[0] *= h; k4[1] *= h;
+
+  const dx = (k1[0] + 2*k2[0] + 2*k3[0] + k4[0]) / 6;
+  const dy = (k1[1] + 2*k2[1] + 2*k3[1] + k4[1]) / 6;
+
+  return { x: x0 + dx, y: y0 + dy };
 }
 
-
 function generateFieldLineTrace(chargeConfig, x0, y0, N, direction = 1) {
-    const trace = [];
+  const trace = [];
+  let x = x0;
+  let y = y0;
+  const h = 0.01 * direction;
 
-    let x = x0;
-    let y = y0;
-    const h = 0.01 * direction;
+  for (let i = 0; i < N; i++) {
+    const next = RK4(x, y, h, chargeConfig);
 
-    for (let i = 0; i < N; i++) {
-        const next = RK4(x, y, h, chargeConfig);
+    if (!isFinite(next.x) || !isFinite(next.y)) break;
 
-        if (!isFinite(next.x) || !isFinite(next.y)) break;
+    tempVec3.set(next.x, next.y, 0);
+    trace.push(tempVec3.clone());
 
-        const point = new THREE.Vector3(next.x, next.y, 0);
-        trace.push(point);
-
-        x = next.x;
-        y = next.y;
-
-    }
-
-    return trace;
+    x = next.x;
+    y = next.y;
+  }
+  return trace;
 }
 
 export function generateAllFieldLineTraces(chargeConfig, numLinesPerCharge, numPoints) {
-    const trace = [];
-    const buffer = [];
-    for (const charge of chargeConfig.charges) {
-        if (charge.charge == 0) continue;
-        for (let i = 0; i < numLinesPerCharge; i++) {
-            const vectors = [];
-            const radius = 0.1;
-            const { x, y } = charge.position;
-            const angle = (i / numLinesPerCharge) * 2 * Math.PI;
-            const x0 = x + radius * Math.cos(angle);
-            const y0 = y + radius * Math.sin(angle);
+  const trace = [];
+  const buffer = [];
 
-            let forward = generateFieldLineTrace(chargeConfig, x0, y0, numPoints, 1);
-            let backward = generateFieldLineTrace(chargeConfig, x0, y0, numPoints, -1);
+  for (const charge of chargeConfig.charges) {
+    if (charge.charge === 0) continue;
 
-            const line =  [...backward.reverse(), new THREE.Vector3(x0, y0, 0), ...forward];
-            vectors.push(...line);
+    const { x, y } = charge.position;
+    const radius = 0.1;
 
-            if (vectors.length < 2) continue;
-            
-            for (const p of vectors) {
-                buffer.push(p.x, p.y, 0);
-            }
-            buffer.push(NaN, NaN, NaN);
-            trace.push(vectors);
-        }
+    for (let i = 0; i < numLinesPerCharge; i++) {
+      const vectors = [];
+      const angle = (i / numLinesPerCharge) * 2 * Math.PI;
+      const x0 = x + radius * Math.cos(angle);
+      const y0 = y + radius * Math.sin(angle);
+
+      const forward = generateFieldLineTrace(chargeConfig, x0, y0, numPoints, 1);
+      const backward = generateFieldLineTrace(chargeConfig, x0, y0, numPoints, -1);
+
+      const line = [...backward.reverse(), new THREE.Vector3(x0, y0, 0), ...forward];
+      vectors.push(...line);
+
+      if (vectors.length < 2) continue;
+
+      for (const p of vectors) {
+        buffer.push(p.x, p.y, 0);
+      }
+      buffer.push(NaN, NaN, NaN);
+      trace.push(vectors);
     }
-    return {trace: trace, buff: buffer};
+  }
+  return { trace, buff: buffer };
 }
