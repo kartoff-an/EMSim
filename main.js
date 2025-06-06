@@ -21,6 +21,8 @@ graphics.renderer.setPixelRatio(Math.min(window.devicePixelRatio * 10, 2));
 // --- DOM Setup ---
 const simField = document.querySelector(".sim-field");
 const slider = document.querySelector('.slider');
+const addChargeCheckBox = document.querySelector('.should-add-charge');
+let isAddingCharge = addChargeCheckBox.checked;
 
 simField.appendChild(graphics.renderer.domElement);
 slider.style.display = 'none';
@@ -64,7 +66,7 @@ graphics.renderer.domElement.addEventListener('click', (event) => {
     sliderController.toggleSlider(mesh, index);
   }
 
-  if (!mesh) {
+  if (!mesh && isAddingCharge && !sliderController.isVisible) {
     const planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     const point = new THREE.Vector3();
     raycaster.ray.intersectPlane(planeZ, point);
@@ -77,8 +79,9 @@ graphics.renderer.domElement.addEventListener('click', (event) => {
 
     graphics.scene.add(chargeMesh);
     charges.meshes.push(chargeMesh);
-    sliderController.toggleSlider(null, -1);
   }
+
+  if (!mesh ) sliderController.toggleSlider(null, -1);
 });
 
 
@@ -120,7 +123,11 @@ document.querySelector('.delete-icon').addEventListener('click', () => {
     sliderController.toggleSlider();
     drawFields(graphics.scene, charges.config, true, true);
   }
-})
+});
+
+addChargeCheckBox.addEventListener('change', (event) => {
+  isAddingCharge = event.currentTarget.checked;
+});
 
 // --- Animation Loop ---
 function animate() {
