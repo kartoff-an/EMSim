@@ -54,6 +54,8 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let activeChargeMeshIndex = -1;
 
+
+
 graphics.renderer.domElement.addEventListener('click', (event) => {
   const rect = graphics.renderer.domElement.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -99,11 +101,14 @@ graphics.renderer.domElement.addEventListener('click', (event) => {
 
 
 
+
 slider.addEventListener('input', () => {
   sliderController.updateCharge(slider.value, options);
   drawFields(graphics.scene, charges.config, options);
   createGridVectors(charges.config, gridSize, 50, graphics.scene, options);
 });
+
+
 
 
 document.querySelector('.clear-all-btn').addEventListener('click', () => {
@@ -123,6 +128,9 @@ document.querySelector('.clear-all-btn').addEventListener('click', () => {
   drawFields(graphics.scene, charges.config, options);
   createGridVectors(charges.config, gridSize, 50, graphics.scene, options);
 });
+
+
+
 
 document.querySelector('.delete-icon').addEventListener('click', () => {
   const mesh = charges.meshes[activeChargeMeshIndex];
@@ -144,9 +152,14 @@ document.querySelector('.delete-icon').addEventListener('click', () => {
   }
 });
 
+
+
 addChargeCheckBox.addEventListener('change', (event) => {
   options.isAddingCharge = event.currentTarget.checked;
 });
+
+
+
 
 showFieldLinesCheckBox.addEventListener('change', (event) => {
   options.shouldShowFieldLines = event.currentTarget.checked;
@@ -162,6 +175,9 @@ showFieldLinesCheckBox.addEventListener('change', (event) => {
   }
 });
 
+
+
+
 showGridVectorsCheckBox.addEventListener('change', (event) => {
   options.shouldShowGridVectors = event.currentTarget.checked;
   createGridVectors(charges.config, gridSize, 50, graphics.scene, options);
@@ -175,6 +191,9 @@ showGridVectorsCheckBox.addEventListener('change', (event) => {
     showHeatMapCheckBox.parentElement.style.display = 'none';
   }
 })
+
+
+
 
 showHeatMapCheckBox.addEventListener('change', (event) => {
   options.shouldShowHeatMap = event.currentTarget.checked;
