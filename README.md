@@ -15,22 +15,6 @@ It is my first web-based interactive simulation built with Three.js that visuali
 
 ... well, I still got some features to add very soon.
 
-##  Tech Stack
-
-* **Three.js** – Core 3D rendering and scene management.
-* **JavaScript (ES6)** – Logic, controls, and UI interactions.
-* **HTML/CSS** – Basic layout and style.
-
-##  Physics Behind the Scenes
-
-* Coulomb's Law:
-  
-  $\displaystyle \vec{E} = \frac{1}{4\pi\varepsilon_0} \sum_i \frac{q_i(\vec{r} - \vec{r}_i)}{|\vec{r} - \vec{r}_i|^3}$
-
-* Field lines follow $\vec{E}$, traced via Runge-Kutta calculation of the differential equation
-  
-  $\displaystyle \frac{dy}{dx} = \frac{E_y}{E_x}$
-
 
 ##  Try It Out
 Open the link: https://kartoff-an.github.io/EMSim/ . 
