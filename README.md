@@ -4,7 +4,7 @@ It is my first web-based interactive simulation built with Three.js that visuali
 
 ## Features
 
-* **Point Charge Visualization** - Charges can be rendered as colored glows (red for positive, blue for negative) with smooth falloff.
+* **Point Charge Visualization** - Charges can be rendered as colored circles (red for positive, blue for negative).
 
 *  **Dynamic Electric Field Lines** - Real-time field line tracing using Runge-Kutta method based on the current configuration of charges.
 
