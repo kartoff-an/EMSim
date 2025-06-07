@@ -28,7 +28,8 @@ It is my first web-based interactive simulation built with Three.js that visuali
 
 
 ##  Try It Out
-
+Open the link: https://kartoff-an.github.io/EMSim/ . 
+Or try it locally, 
 > Just clone and open `index.html` in a modern browser. No build steps needed (yet).
 
 ```bash
