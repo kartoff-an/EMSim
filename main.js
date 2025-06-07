@@ -5,6 +5,8 @@ import Draw from './render/draw.js';
 import ChargeConfig from './sim/ChargeConfig.js';
 import SliderController from './controls/SliderController.js';
 import { drawFields } from './sim/FieldLines.js';
+import { createGridVectors } from './sim/FieldVectors.js';
+import { gridSize } from './render/draw.js';
 
 // --- Graphics Setup ---
 const graphics = {
@@ -22,7 +24,16 @@ graphics.renderer.setPixelRatio(Math.min(window.devicePixelRatio * 10, 2));
 const simField = document.querySelector(".sim-field");
 const slider = document.querySelector('.slider');
 const addChargeCheckBox = document.querySelector('.should-add-charge');
+const showHeatMapCheckBox = document.querySelector('.show-heat-map');
+const showFieldLinesCheckBox = document.querySelector('.show-field-lines');
+const showGridVectorsCheckBox = document.querySelector('.show-grid-vectors');
 let isAddingCharge = addChargeCheckBox.checked;
+
+const options = {
+  shouldShowFieldLines: showFieldLinesCheckBox.checked,
+  shouldShowGridVectors: showGridVectorsCheckBox.checked,
+  shouldShowHeatMap: showHeatMapCheckBox.checked
+}
 
 simField.appendChild(graphics.renderer.domElement);
 slider.style.display = 'none';
@@ -86,7 +97,11 @@ graphics.renderer.domElement.addEventListener('click', (event) => {
 
 
 
-slider.addEventListener('input', () => sliderController.updateCharge(slider.value));
+slider.addEventListener('input', () => {
+  sliderController.updateCharge(slider.value, options);
+  drawFields(graphics.scene, charges.config, options);
+  createGridVectors(charges.config, gridSize, 50, graphics.scene, options);
+});
 
 
 document.querySelector('.clear-all-btn').addEventListener('click', () => {
@@ -103,7 +118,8 @@ document.querySelector('.clear-all-btn').addEventListener('click', () => {
   charges.meshes.length = 0;;
   
   sliderController.toggleSlider();
-  drawFields(graphics.scene, charges.config, true, true);
+  drawFields(graphics.scene, charges.config, options);
+  createGridVectors(charges.config, gridSize, 50, graphics.scene, options);
 });
 
 document.querySelector('.delete-icon').addEventListener('click', () => {
@@ -121,13 +137,48 @@ document.querySelector('.delete-icon').addEventListener('click', () => {
     graphics.scene.remove(mesh);
     activeChargeMeshIndex = -1;
     sliderController.toggleSlider();
-    drawFields(graphics.scene, charges.config, true, true);
+    drawFields(graphics.scene, charges.config, options);
+    createGridVectors(charges.config, gridSize, 50, graphics.scene, options);
   }
 });
 
 addChargeCheckBox.addEventListener('change', (event) => {
   isAddingCharge = event.currentTarget.checked;
 });
+
+showFieldLinesCheckBox.addEventListener('change', (event) => {
+  options.shouldShowFieldLines = event.currentTarget.checked;
+  drawFields(graphics.scene, charges.config, options);
+
+  if (options.shouldShowFieldLines || options.shouldShowGridVectors) {
+    showHeatMapCheckBox.style.display = 'flex';
+    showHeatMapCheckBox.parentElement.style.display = 'flex';
+  }
+  else {
+    showHeatMapCheckBox.style.display = 'none';
+    showHeatMapCheckBox.parentElement.style.display = 'none';
+  }
+});
+
+showGridVectorsCheckBox.addEventListener('change', (event) => {
+  options.shouldShowGridVectors = event.currentTarget.checked;
+  createGridVectors(charges.config, gridSize, 50, graphics.scene, options);
+
+  if (options.shouldShowFieldLines || options.shouldShowGridVectors) {
+    showHeatMapCheckBox.style.display = 'flex';
+    showHeatMapCheckBox.parentElement.style.display = 'flex';
+  }
+  else {
+    showHeatMapCheckBox.style.display = 'none';
+    showHeatMapCheckBox.parentElement.style.display = 'none';
+  }
+})
+
+showHeatMapCheckBox.addEventListener('change', (event) => {
+  options.shouldShowHeatMap = event.currentTarget.checked;
+  drawFields(graphics.scene, charges.config, options);
+  createGridVectors(charges.config, gridSize, 50, graphics.scene, options);
+})
 
 // --- Animation Loop ---
 function animate() {

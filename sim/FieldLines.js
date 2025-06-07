@@ -1,7 +1,5 @@
 import * as THREE from 'three';
-import { createGridVectors } from '../sim/FieldVectors.js';
 import { intensityToColor, getColorMapping } from '../utils/color.js';
-import { gridSize } from '../render/draw';
 
 function RK4(x0, y0, h, chargeConfig) {
     const f = (x, y, out) => {
@@ -94,10 +92,10 @@ function generateAllFieldLineTraces(chargeConfig) {
 }
 
 
-function addLineToGroup(buffer, chargeConfig, group) {
+function addLineToGroup(buffer, chargeConfig, group, options) {
     const positionAttr = new Float32Array(buffer);
     const geometry = new THREE.BufferGeometry();
-    const colors = getColorMapping(positionAttr, chargeConfig);
+    const colors = options.shouldShowHeatMap ? getColorMapping(positionAttr, chargeConfig) : new Array(positionAttr.length).fill(1);
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positionAttr, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -107,12 +105,12 @@ function addLineToGroup(buffer, chargeConfig, group) {
     group.add(line);
 }
 
-function createLineArrows(trace, chargeConfig) {
+function createLineArrows(trace, chargeConfig, options) {
     const arrowCount = Math.min(6, Math.floor(trace.length / 500));
     const maxIntensity = 1;
 
     const coneGeom = new THREE.ConeGeometry(0.04, 0.08, 6);
-    const arrowMaterial = new THREE.MeshBasicMaterial({vertexColors: true, depthWrite: true });
+    const arrowMaterial = new THREE.MeshBasicMaterial({vertexColors: false, depthWrite: true });
     const instancedArrows = new THREE.InstancedMesh(coneGeom, arrowMaterial, arrowCount);
     const dummy = new THREE.Object3D();
     const colorsArray = new Float32Array(arrowCount * 3);
@@ -129,7 +127,7 @@ function createLineArrows(trace, chargeConfig) {
         const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
         const E = chargeConfig.getElectricFieldAt(mid.x, mid.y);
         const mag = E.length();
-        const colorArr = intensityToColor((mag / 500e8).toFixed(2), maxIntensity);
+        const colorArr = options.shouldShowHeatMap ? intensityToColor((mag / 500e8).toFixed(2), maxIntensity) : [1, 1, 1];
         const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, dir);
 
         dummy.position.copy(mid);
@@ -149,7 +147,7 @@ function createLineArrows(trace, chargeConfig) {
 
 
 let fieldLines = [];
-export function drawFields (scene, chargeConfig, shouldShowArrows = true, shouldShowGridVectors = true) {
+export function drawFields (scene, chargeConfig, options) {
     for (const line of fieldLines) {
         line.traverse((child) => {
             if (child.geometry) child.geometry.dispose();
@@ -159,12 +157,15 @@ export function drawFields (scene, chargeConfig, shouldShowArrows = true, should
     }
     fieldLines.length = 0;
 
+    if (!options.shouldShowFieldLines) return;
+
     const fieldGroup = new THREE.Group();
     const positions = generateAllFieldLineTraces(chargeConfig);
 
-    if (shouldShowArrows && positions.trace) {
+    if (positions.trace) {
         for (let i = 0; i < positions.trace.length; i++) {
-            const arrows = createLineArrows(positions.trace[i], chargeConfig);
+            const traceVector = positions.trace[i]; // this is an array of {x, y, z} points
+            const arrows = createLineArrows(traceVector, chargeConfig, options);
             fieldGroup.add(arrows);
         }
     }
@@ -177,7 +178,7 @@ export function drawFields (scene, chargeConfig, shouldShowArrows = true, should
 
         if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
             if (currentLine.length >= 6) {
-                addLineToGroup(currentLine, chargeConfig, fieldGroup);
+                addLineToGroup(currentLine, chargeConfig, fieldGroup, options);
             }
             currentLine = [];
         } else {
@@ -188,11 +189,9 @@ export function drawFields (scene, chargeConfig, shouldShowArrows = true, should
         addLineToGroup(currentLine, chargeConfig, fieldGroup);
     }
 
-    if (shouldShowGridVectors) {
-        createGridVectors(chargeConfig, gridSize, 50, fieldGroup);
-    }
-
     fieldGroup.renderOrder = 0;
     scene.add(fieldGroup);
     fieldLines.push(fieldGroup);
+
+    console.log(options.shouldShowFieldLines)
 }

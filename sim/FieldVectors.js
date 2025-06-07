@@ -1,10 +1,23 @@
 import * as THREE from 'three';
 import { intensityToColor } from '../utils/color';
 
-export function createGridVectors(chargeConfig, gridSize, divisions, group) {
+let gridVectors = [];
+export function createGridVectors(chargeConfig, gridSize, divisions, scene, options) {
+    for (const vector of gridVectors) {
+        vector.traverse((child) => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) child.material.dispose();
+        });
+        scene.remove(vector);
+    }
+    gridVectors.length = 0;
+
+    if (!options.shouldShowGridVectors) return;
+
     const maxIntensity = 1;
     const step = gridSize / divisions;
     const halfSize = gridSize / 2;
+    const group = new THREE.Group();
 
     // --- First pass: gather field intensities and count valid arrows ---
     const fieldIntensities = [];
@@ -31,9 +44,10 @@ export function createGridVectors(chargeConfig, gridSize, divisions, group) {
     const instancedArrows = new THREE.InstancedMesh(coneGeom, arrowMaterial, validArrowCount);
     const instancedTails = new THREE.InstancedMesh(cylinderGeom, tailMaterial, validArrowCount);
     const instanceColorBuffer = new THREE.InstancedBufferAttribute(new Float32Array(validArrowCount * 3), 3);
+    
     instancedArrows.instanceColor = instanceColorBuffer;
     instancedTails.instanceColor = instanceColorBuffer;
-
+    
     const dummy = new THREE.Object3D();
     const zAxis = new THREE.Vector3(0, 0, 1);
 
@@ -49,7 +63,7 @@ export function createGridVectors(chargeConfig, gridSize, divisions, group) {
 
             const unitVector = E.clone().normalize();
             const intensity = mag / 500e8;
-            const colorArr = intensityToColor(intensity, maxIntensity);
+            const colorArr = options.shouldShowHeatMap ? intensityToColor(intensity, maxIntensity) : [1, 1, 1,];
             const scale = THREE.MathUtils.clamp(mag / 1e9, 0, 1.2);
             const shaftLength = 0.3 * Math.max(THREE.MathUtils.clamp(mag / 800e8, 0.4, 1.2), 0.4);
 
@@ -89,4 +103,6 @@ export function createGridVectors(chargeConfig, gridSize, divisions, group) {
 
     group.add(instancedArrows);
     group.add(instancedTails);
+    scene.add(group);
+    gridVectors.push(group);
 }

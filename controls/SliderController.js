@@ -47,7 +47,7 @@ class SliderController {
         this.slider.style.setProperty('--thumb-color', color);
     }
     
-    updateCharge(value) {
+    updateCharge(value, options) {
         if (this.activeMeshIndex < 0) return;
         const newCharge = parseFloat(value);
         this.charges.list[this.activeMeshIndex].charge = newCharge;
@@ -64,7 +64,6 @@ class SliderController {
         this.activeMesh = updatedMesh;
         this.graphics.scene.add(updatedMesh);
         this.updateThumbColor();
-        drawFields(this.graphics.scene, this.charges.config, true);
     }
 }
 
