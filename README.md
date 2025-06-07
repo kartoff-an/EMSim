@@ -10,6 +10,11 @@ It is my first web-based interactive simulation built with Three.js that visuali
 
 *  **Charge Interaction** - Add or remove point charges and change their charge values dynamically. Charges update the field in real-time.
 
+*  **Vector Fields** - Visualize dynamic electric field intensity as vector fields in real-time with smooth, interactive rendering.
+
+
+... well, I still got some features to add very soon.
+
 ##  Tech Stack
 
 * **Three.js** – Core 3D rendering and scene management.
@@ -28,7 +33,9 @@ It is my first web-based interactive simulation built with Three.js that visuali
 
 
 ##  Try It Out
+Open the link: https://kartoff-an.github.io/EMSim/ . 
 
+Or, try it locally, 
 > Just clone and open `index.html` in a modern browser. No build steps needed (yet).
 
 ```bash
