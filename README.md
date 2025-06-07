@@ -8,7 +8,7 @@ It is my web-based interactive simulation built with Three.js that visualizes el
 
 *  **Dynamic Electric Field Lines** - Real-time field line tracing using Runge-Kutta method based on the current configuration of charges.
 
-*  **Charge Interaction** - Drag-and-drop UI to add, move, or remove charges. Charges update the field in real-time.
+*  **Charge Interaction** - Add or remove point charges and change their charge values dynamically. Charges update the field in real-time.
 
 ##  Tech Stack
 
