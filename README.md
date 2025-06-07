@@ -1,5 +1,5 @@
 # ⚡ Electric Field Simulation
-
+    ![My Image](screenshot.png)
 It is my first web-based interactive simulation built with Three.js that visualizes electric fields due to point charges, charge interactions, and field lines in real-time. It's designed to be visually smooth and educational. I'm using this project to supplement my self-studying in electromagnetics by putting the concepts I'm learning into interactive simulations.
 
 ## Features
