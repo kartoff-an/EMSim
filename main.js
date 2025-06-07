@@ -4,6 +4,7 @@ import Charge from './sim/Charge.js';
 import Draw from './render/draw.js';
 import ChargeConfig from './sim/ChargeConfig.js';
 import SliderController from './controls/SliderController.js';
+import { initDrag, setDraggableMeshes } from './controls/dragControl.js';
 import { drawFields } from './sim/FieldLines.js';
 import { createGridVectors } from './sim/FieldVectors.js';
 import { gridSize } from './render/draw.js';
@@ -14,6 +15,7 @@ const graphics = {
   camera: new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000),
   renderer: new THREE.WebGLRenderer({ antialias: true }),
 };
+
 graphics.scene.background = new THREE.Color(0x181818);
 graphics.scene.add(Draw.grid(graphics.camera, 10));
 graphics.camera.position.z = 10;
@@ -27,12 +29,12 @@ const addChargeCheckBox = document.querySelector('.should-add-charge');
 const showHeatMapCheckBox = document.querySelector('.show-heat-map');
 const showFieldLinesCheckBox = document.querySelector('.show-field-lines');
 const showGridVectorsCheckBox = document.querySelector('.show-grid-vectors');
-let isAddingCharge = addChargeCheckBox.checked;
 
 const options = {
   shouldShowFieldLines: showFieldLinesCheckBox.checked,
   shouldShowGridVectors: showGridVectorsCheckBox.checked,
-  shouldShowHeatMap: showHeatMapCheckBox.checked
+  shouldShowHeatMap: showHeatMapCheckBox.checked,
+  isAddingCharge: addChargeCheckBox.checked
 }
 
 simField.appendChild(graphics.renderer.domElement);
@@ -77,7 +79,7 @@ graphics.renderer.domElement.addEventListener('click', (event) => {
     sliderController.toggleSlider(mesh, index);
   }
 
-  if (!mesh && isAddingCharge && !sliderController.isVisible) {
+  if (!mesh && options.isAddingCharge && !sliderController.isVisible) {
     const planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     const point = new THREE.Vector3();
     raycaster.ray.intersectPlane(planeZ, point);
@@ -143,7 +145,7 @@ document.querySelector('.delete-icon').addEventListener('click', () => {
 });
 
 addChargeCheckBox.addEventListener('change', (event) => {
-  isAddingCharge = event.currentTarget.checked;
+  options.isAddingCharge = event.currentTarget.checked;
 });
 
 showFieldLinesCheckBox.addEventListener('change', (event) => {

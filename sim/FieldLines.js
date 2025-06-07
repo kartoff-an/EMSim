@@ -64,7 +64,7 @@ function generateAllFieldLineTraces(chargeConfig) {
     for (const charge of chargeConfig.charges) {
         if (charge.charge == 0) continue;
 
-        const numLinesPerCharge  = Math.round(4 + 0.8 * Math.abs(charge.charge));
+        const numLinesPerCharge  = 8; //Math.round(4 + 0.8 * Math.abs(charge.charge));
         for (let i = 0; i < numLinesPerCharge; i++) {
             const vectors = [];
             const radius = 0.1;
