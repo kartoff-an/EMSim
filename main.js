@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 
 import Charge from './sim/Charge.js';
-import Draw from './render/draw.js';
+import Draw from './utils/grid.js';
 import ChargeConfig from './sim/ChargeConfig.js';
 import SliderController from './controls/SliderController.js';
 import { initDrag, setDraggableMeshes } from './controls/dragControl.js';
 import { drawFields } from './sim/FieldLines.js';
 import { createGridVectors } from './sim/FieldVectors.js';
-import { gridSize } from './render/draw.js';
+import { gridSize } from './utils/grid.js';
 
 // --- Graphics Setup ---
 const graphics = {
