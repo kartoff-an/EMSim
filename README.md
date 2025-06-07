@@ -10,6 +10,9 @@ It is my first web-based interactive simulation built with Three.js that visuali
 
 *  **Charge Interaction** - Add or remove point charges and change their charge values dynamically. Charges update the field in real-time.
 
+
+... well, I still got some features to add very soon.
+
 ##  Tech Stack
 
 * **Three.js** – Core 3D rendering and scene management.
