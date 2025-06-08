@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { drawFields } from '../sim/FieldLines';
 
 class SliderController {
     constructor(slider, charges, graphics) {
@@ -47,7 +46,7 @@ class SliderController {
         this.slider.style.setProperty('--thumb-color', color);
     }
     
-    updateCharge(value, options) {
+    updateCharge(value) {
         if (this.activeMeshIndex < 0) return;
         const newCharge = parseFloat(value);
         this.charges.list[this.activeMeshIndex].charge = newCharge;

@@ -103,7 +103,7 @@ graphics.renderer.domElement.addEventListener('click', (event) => {
 
 
 slider.addEventListener('input', () => {
-  sliderController.updateCharge(slider.value, options);
+  sliderController.updateCharge(slider.value);
   drawFields(graphics.scene, charges.config, options);
   createGridVectors(charges.config, gridSize, 50, graphics.scene, options);
 });
