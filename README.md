@@ -17,14 +17,18 @@ It is my first web-based interactive simulation built with Three.js that visuali
 
 
 ##  Try It Out
+
+Try it here: https://kartoff-an.github.io/electric-field-simulation/
+
+OR, locally
 > Just clone and open `index.html` in a modern browser. No build steps needed (yet).
 
 ```bash
-git clone https://github.com/kartoff-an/EMSim
-cd EMSim
+git clone https://github.com/kartoff-an/electric-field-simulation
+cd electric-field-simulation
 npx vite
 ```
 
 ## 📚 License
 
-**Apache License 2.0**. You’re free to use, modify, and distribute this project — even commercially — as long as you include proper attribution and state any changes. See the [LICENSE](./LICENSE) file for full details.
+**Apache License 2.0**. You’re free to use, modify, and distribute this project as long as you include proper attribution and state any changes. See the [LICENSE](./LICENSE) file for full details.
