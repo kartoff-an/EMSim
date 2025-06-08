@@ -24,8 +24,8 @@ OR, locally
 > Just clone and open `index.html` in a modern browser. No build steps needed (yet).
 
 ```bash
-git clone https://github.com/kartoff-an/EMSim
-cd EMSim
+git clone https://github.com/kartoff-an/electric-field-simulation
+cd electric-field-simulation
 npx vite
 ```
 
